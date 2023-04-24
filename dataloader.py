@@ -60,14 +60,6 @@ def get_dataset(generator, usage):
                 (config["sequence_length"], config["batch_size"]) + FEATURE_SHAPE,
                 (config["sequence_length"], config["batch_size"]) +  FEATURE_SHAPE,
         )
-        # args=[config["batch_size"]],
-        # output_signature=(
-        #    ( 
-        #     tf.TensorSpec(shape=(config["sequence_length"], 
-        #                           config["batch_size"], 1, 24, 24, 1), dtype=tf.float32)),
-        #     (tf.TensorSpec(shape=(config["sequence_length"],
-        #                            config["batch_size"], 1, 24, 24, 1), dtype=tf.float32)),
-        #     )
     )
 
     print(dataset.element_spec[0].shape)
