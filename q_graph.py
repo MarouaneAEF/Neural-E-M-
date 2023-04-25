@@ -10,9 +10,8 @@ class q_graph(tf.keras.Model):
         
         self.bloc_encoder = tf.keras.Sequential(
             
-        [    
-           layers.InputLayer(input_shape=(None, 24, 24, 1)),
-           layers.LayerNormalization(),
+        [  layers.LayerNormalization(),  
+           layers.Reshape((None, 24, 24, 1)),
             layers.Conv2D(
                 filters=32, kernel_size=4, strides=(2, 2), activation='relu'),
             layers.Conv2D(
@@ -52,7 +51,7 @@ class q_graph(tf.keras.Model):
 
             ]
         )
-    def call(self, inputs):
+    def call(self, inputs, theta):
         x = self.bloc_encoder(x)
         x, theta = self.rnn(x, initial_state=theta)
         x = self.decoder_bloc(x)
