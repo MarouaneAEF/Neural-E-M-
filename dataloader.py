@@ -18,7 +18,7 @@ class generator(object):
     # class wise configuration : commun for all batches and generator should not take 
     # any argument 
     config = {
-
+    "usage" : "training",
     "batch_size": BATCH_SIZE,
     "sequence_length" : SEQUENCE_LENGHT ,
     "filename" : NEM_DATA,
@@ -46,9 +46,9 @@ class generator(object):
 def get_dataset(generator, usage):
     config = generator.config
     if usage == "training":
-        generator.config.update({"usage" : "training"})
+        generator.config["usage"] = usage
     elif usage == "validation":
-        generator.config.update({"usage" : "validation"})
+        generator.config["usage"] = usage
     else:
         raise ValueError(f"Invalid usage: {usage}")
     print("sequence length", config["sequence_length"])
