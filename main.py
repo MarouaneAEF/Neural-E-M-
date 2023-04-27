@@ -32,7 +32,7 @@ for epoch in range(max_epoch):
 
                 inputs = features_corrupted[i], features[i+1] 
                 hidden_state  = rnn_cell(inputs, hidden_state)
-                h, pred, gamma = hidden_state
+                _, pred, gamma = hidden_state
 
                 gammas.append(gamma)
                 loss_rnn_em  = em_loss(pred, features[i+1], gamma)
@@ -43,13 +43,29 @@ for epoch in range(max_epoch):
         
         gammas = tf.stack(gammas) # suitable size to be checked 
         
-        ami = adjusted_mutual_info_score(groups[:-1], gammas.numpy())
+        ami_train = adjusted_mutual_info_score(groups[:-1], gammas.numpy())
              
     if step % 25 == 0:
-        print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Training AMI: {ami:.4f}")
+        print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Training AMI: {ami_train:.4f}")
 
 
-#TODO: Validation loop
+    #TODO: Validation loop
+    for step, (features, groups) in valid_data:
+        features_corrupted = corrupted_data(features)
+        hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
+        
+        for i in range(SEQUENCE_LENGHT):
+            inputs = features_corrupted[i], features[i+1]
+            hidden_state = rnn_cell(inputs, hidden_state)
+            _, _, gamma = hidden_state
+            gammas.append(gamma)
+        
+        gammas = tf.stack(gammas)
+        ami_valid = adjusted_mutual_info_score(groups[:-1], gammas.numpy())
+        if step % 25 == 0:
+            print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Validation AMI: {ami_valid:.4f}")
+
+
 
 
 
