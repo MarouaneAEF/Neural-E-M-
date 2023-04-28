@@ -23,9 +23,11 @@ class em_loss(object):
 
     def __call__(self, mu, data, gamma):
 
+        # when we backprop through the loss gamma must be treated as constant dL/dgamma = 0 
         intra_loss = tf.reduce_sum(
             tf.stop_gradient(gamma) * self.log_normal_loss(data, mu, 1.0)
             )
+        
         inter_loss = tf.reduce_sum(
             (1 - tf.stop_gradient(gamma)) * self.kl_normal_loss(mu, self.prior["mu"], 1.0, self.prior["sigma"] )
             )
