@@ -7,5 +7,4 @@ This is a non-official implementation of the paper: https://proceedings.neurips.
 The dataset can be found here: https://www.dropbox.com/sh/1ue3lrfvbhhkt6s/AAB6WiZzH_mAtCjW6b9okMGea?dl=0."
 
 
-tensorflow == 2.5.0
 
