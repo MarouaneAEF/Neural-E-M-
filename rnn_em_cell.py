@@ -16,7 +16,7 @@ class rnn_em:
         h = None
         # initial prediction,  shape : (batch_size, K, W, H, C)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
-        pred  = tf.zeros(shape=pred_shape, dtype=tf.float32)
+        pred  = tf.ones(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
         shape_gama = tf.stack([batch_size, K] + self.gamma_shape)
         
@@ -44,7 +44,7 @@ class rnn_em:
 
         return tf.reshape(predictions, shape=q_shape), h 
     
-    def compute_probs(self, predictions, data):
+    def compute_joint_probs(self, predictions, data):
 
         mu , sigma = predictions, .25 
         probs = (
@@ -84,7 +84,7 @@ class rnn_em:
         q_output, h = self.q_graph_call(q_inputs, h)
         gamma = self.e_step(q_output, targets)
 
-        return h, preds, gamma
+        return h, q_output, gamma
 
         
 

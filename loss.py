@@ -27,7 +27,11 @@ class em_loss(object):
         intra_loss = tf.reduce_sum(
             tf.stop_gradient(gamma) * self.log_normal_loss(data, mu, 1.0)
             )
-        
+        #  the convergence of this rnn-em is not guaranteed
+        #  unlike the pure neural em algorithm
+        #  we add the the extra loss to penalize the EM loss 
+        # by adding KL divergence between the pixels predictions with gamma_iK = 0 
+        # (out-of-cluster) and prior of the pixel (cf. the article)
         inter_loss = tf.reduce_sum(
             (1 - tf.stop_gradient(gamma)) * self.kl_normal_loss(mu, self.prior["mu"], 1.0, self.prior["sigma"] )
             )
