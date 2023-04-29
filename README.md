@@ -9,14 +9,14 @@ In the case of RNN-EM, there are K copies of the RNN, each with its own hidden s
 
 Their is no formal proof about taking this choice of input to the RNNs. One may think about taking only x as input which may be at the first glance intuitive but a poor choice. 
 
-The choice of using the difference between the mean and the input scaled by a factor as input to the RNNs is motivated by the underlying generative model the author are about to settle. The model assumes that the data x is generated from a mixture of K Gaussian distributions with means $\psi_{k}$ and fixed variance. The scaling factor $\gamma_{k}$ controls the influence of the mean of each Gaussian on the input x.
+The choice of using the difference between the mean and the input scaled by a factor as input to the RNNs is motivated by the underlying generative model the authors are about to settle. The model assumes that the data x is generated from a mixture of K Gaussian distributions with means $\psi_{k}$ and fixed variance. The scaling factor $\gamma_{k}$ controls the influence of the mean of each Gaussian on the input x.
 
 By using $\gamma_{k}(\psi_{k} - x)$ as input to the RNNs, RNN-EM is essentially learning to estimate the parameters of the mixture model by iteratively refining the estimates of the means and the scaling factors. This allows the model to better capture the underlying distribution of the data and converge to a more accurate solution. The convergence is not guaranteed though.
 
 
 The authors say : " ... In order to accurately mimic the M-Step (4) with an RNN, we must impose several restrictions on its weights and structure: the “encoder” must correspond to the Jacobian ...". None of those restrictions are used in this study. 
 
-The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergence penelization term in the training Loss are good workaround of the afromentionned restrictions and others though.
+The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergence penelization term in the training Loss are good workaround of the aforementioned restrictions and others though.
 
 
 # Post Scriptum:
