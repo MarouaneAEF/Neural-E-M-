@@ -49,6 +49,8 @@ def get_dataset(generator, usage):
         generator.config["usage"] = usage
     elif usage == "validation":
         generator.config["usage"] = usage
+    elif usage == "test":
+        generator.config["usage"] = usage
     else:
         raise ValueError(f"Invalid usage: {usage}")
     print("sequence length", config["sequence_length"])
