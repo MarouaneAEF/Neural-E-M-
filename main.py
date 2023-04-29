@@ -49,7 +49,7 @@ for epoch in range(max_epoch):
         print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Training AMI: {ami_train:.4f}")
 
 
-    #TODO: Validation loop
+    # Validation loop
     for step, (features, groups) in valid_data:
         features_corrupted = corrupted_data(features)
         hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
