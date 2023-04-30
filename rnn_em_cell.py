@@ -32,7 +32,7 @@ class rnn_em(object):
         # gamma is processed through the e-step 
         return inputs * tf.stop_gradient(gamma)
 
-    def _q_graph_call(self, q_input, rnn_state):
+    def q_graph_call(self, q_input, rnn_state):
         
         q_shape = tf.shape(q_input)
         M = tf.math.reduce_prod(list(self.input_shape))
@@ -43,7 +43,7 @@ class rnn_em(object):
 
         return tf.reshape(predictions, shape=q_shape), rnn_state 
     
-    def compute_joint_probs(self, predictions, data):
+    def _compute_joint_probs(self, predictions, data):
         """
         computing the joint p(data, z| mu, sigma)
         with sigma fixed (see the article)
@@ -64,7 +64,7 @@ class rnn_em(object):
         Performing Expectation step of the EM algorithm: gamma  = P(z |targets, predictions)
         """
 
-        probs = self.compute_joint_probs(predictions, targets)
+        probs = self._compute_joint_probs(predictions, targets)
         
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
@@ -89,7 +89,7 @@ class rnn_em(object):
         features, targets = inputs
         rnn_state, preds, gamma = state
         delta = preds - features
-        q_inputs = self._q_graph_input(delta, gamma)
+        q_inputs = self.q_graph_input(delta, gamma)
         q_output, rnn_state = self._q_graph_call(q_inputs, rnn_state)
         gamma = self._e_step(q_output, targets)
 
