@@ -18,12 +18,12 @@ class rnn_em(object):
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
         pred  = tf.ones(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
-        shape_gama = tf.stack([batch_size, K] + list(self.gamma_shape))
-        
+        # shape_gama = tf.stack([batch_size, K] + list(self.gamma_shape))
+        shape_gama =  list(self.gamma_shape)
         gamma = tf.abs(tf.random.normal(shape=shape_gama, dtype=tf.float32))
         # p(z) prior 
         gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
-        print(f"gamma from within rnn-em: {tf.shape(gamma)}")
+        
         return rnn_state, pred, gamma
     
     @staticmethod
@@ -57,7 +57,7 @@ class rnn_em(object):
                  )
         # for each value data_x in data and the corresponding value mu_x in mu, 
         # this line computes the joint probability p(data, z| mu, sigma): 
-        probs = tf.reduce_sum(probs, axis=-1, keepdims=True) #+ tf.constant(1e-6, dtype=tf.float32)
+        probs = tf.reduce_sum(probs, axis=-1, keepdims=True) + 1e-6
         return probs 
     def _e_step(self, predictions , targets):
         """

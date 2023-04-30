@@ -21,13 +21,14 @@ train_data = get_dataset(generator, "training")
 valid_data = get_dataset(generator, "validation")
 
 
-gammas = []
+
 for epoch in range(max_epoch):
     for step, (features, groups) in enumerate(train_data):
         features_corrupted = corrupted_data(features)
         hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
         # h, pred, gamma = hidden_state
         batch_loss = .0
+        gammas = []
         with tf.GradientTape() as tape:
             for i in range(SEQUENCE_LENGHT):
 
