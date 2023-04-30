@@ -10,8 +10,9 @@ class Q_graph(tf.keras.Model):
         
         self.bloc_encoder = tf.keras.Sequential(
         [  
-            layers.LayerNormalization(),  
-            layers.Reshape((None, 24, 24, 1)),
+            layers.LayerNormalization(), 
+            # the size of the first dimension must be inferred from the input tensor 
+            layers.Reshape((-1, 24, 24, 1)),
             layers.Conv2D(
                 filters=32, kernel_size=4, strides=(2, 2), activation='relu'),
             layers.Conv2D(
@@ -19,7 +20,7 @@ class Q_graph(tf.keras.Model):
             layers.Conv2D(
                 filters=128, kernel_size=4, strides=(2, 2), activation='relu'),
             layers.Flatten(),
-            layers.Dense(512),
+            layers.Dense(512, activation = 'relu'),
             layers.Reshape(target_shape = (512,1)),
 
             ])
