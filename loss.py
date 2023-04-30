@@ -3,7 +3,7 @@ import tensorflow as tf
 
 class em_loss(object):
 
-    def __init__(self, prior={"mu":.0, "sigma":1.}):
+    def __init__(self, prior={"mu":.0, "sigma":.25}):
         self.prior = prior
         
 
@@ -32,8 +32,8 @@ class em_loss(object):
         #  we add the the extra loss to penalize the EM loss 
         # by adding KL divergence between the pixels predictions with gamma_iK = 0 
         # (out-of-cluster) and prior of the pixel (cf. the article)
-        inter_loss = tf.reduce_sum(
-            (1 - tf.stop_gradient(gamma)) * self.kl_normal_loss(mu, self.prior["mu"], 1.0, self.prior["sigma"] )
+        inter_loss =  tf.reduce_sum(
+            (1 - tf.stop_gradient(gamma)) * self.kl_normal_loss(self.prior["mu"], mu, 1.0, self.prior["sigma"] )
             )
-        total_loss = intra_loss + inter_loss
+        total_loss = intra_loss - inter_loss
         return total_loss

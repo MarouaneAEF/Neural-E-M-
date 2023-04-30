@@ -1,8 +1,7 @@
 import tensorflow as tf
-import tensorflow_probability as tfp 
 import numpy as np 
 
-class rnn_em:
+class rnn_em(object):
 
     def __init__(self, q_graph, input_shape):
         self.model = q_graph
@@ -13,36 +12,36 @@ class rnn_em:
 
     def initial_state(self, batch_size, K):
         # initial rnn hidden state
-        h = None
+        rnn_state = None
+
         # initial prediction,  shape : (batch_size, K, W, H, C)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
         pred  = tf.ones(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
-        shape_gama = tf.stack([batch_size, K] + self.gamma_shape)
+        shape_gama = tf.stack([batch_size, K] + list(self.gamma_shape))
         
         gamma = tf.abs(tf.random.normal(shape=shape_gama, dtype=tf.float32))
         # p(z) prior 
-        gamma /= tf.reduce_sum(gamma, axis=1)  
-
-        return h, pred, gamma
+        gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
+        print(f"gamma from within rnn-em: {tf.shape(gamma)}")
+        return rnn_state, pred, gamma
     
     @staticmethod
-    def q_graph_input(inputs, gamma):
+    def _q_graph_input(inputs, gamma):
         # this implments gamma * (inputs) without backprop through the gamma variable
         # gamma is processed through the e-step 
         return inputs * tf.stop_gradient(gamma)
 
-    @staticmethod
-    def q_graph_call(self, q_input, h):
+    def _q_graph_call(self, q_input, rnn_state):
         
         q_shape = tf.shape(q_input)
         M = tf.math.reduce_prod(list(self.input_shape))
         reshaped_q_input = tf.reshape(q_input, 
                                       shape=tf.stack([q_shape[0] * q_shape[1], M])
                                       )
-        predictions, h = self.model(reshaped_q_input, h)
+        predictions, rnn_state = self.model(reshaped_q_input, rnn_state)
 
-        return tf.reshape(predictions, shape=q_shape), h 
+        return tf.reshape(predictions, shape=q_shape), rnn_state 
     
     def compute_joint_probs(self, predictions, data):
         """
@@ -58,16 +57,19 @@ class rnn_em:
                  )
         # for each value data_x in data and the corresponding value mu_x in mu, 
         # this line computes the joint probability p(data, z| mu, sigma): 
-        probs = tf.reduce_sum(probs, axis=-1, keepdims=True) + 1e-6
-
-    def e_step(self, predictions , targets):
+        probs = tf.reduce_sum(probs, axis=-1, keepdims=True) #+ tf.constant(1e-6, dtype=tf.float32)
+        return probs 
+    def _e_step(self, predictions , targets):
         """
         Performing Expectation step of the EM algorithm: gamma  = P(z |targets, predictions)
         """
 
         probs = self.compute_joint_probs(predictions, targets)
+        
         # summing up over all z's scenarios 
+        # print("probs", tf.shape(probs))
         normalization_const = tf.reduce_sum(probs, 1, keepdims=True)
+        
         gamma = probs / normalization_const
         # gamma represents the responsibility of each mixture component for generating each observation in the input data. 
         # It is a tensor with the same shape as probs, which has dimensions (B, K, W, H, 1), 
@@ -82,16 +84,16 @@ class rnn_em:
 
         return gamma
     
-    def __call__(self, inputs, init_state):
+    def __call__(self, inputs, state):
 
         features, targets = inputs
-        h, preds, gamma = init_state
+        rnn_state, preds, gamma = state
         delta = preds - features
-        q_inputs = self.q_graph_input(delta, gamma)
-        q_output, h = self.q_graph_call(q_inputs, h)
-        gamma = self.e_step(q_output, targets)
+        q_inputs = self._q_graph_input(delta, gamma)
+        q_output, rnn_state = self._q_graph_call(q_inputs, rnn_state)
+        gamma = self._e_step(q_output, targets)
 
-        return h, q_output, gamma
+        return (rnn_state, q_output, gamma)
 
         
 

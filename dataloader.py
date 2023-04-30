@@ -53,7 +53,7 @@ def get_dataset(generator, usage):
         generator.config["usage"] = usage
     else:
         raise ValueError(f"Invalid usage: {usage}")
-    print("sequence length", config["sequence_length"])
+    
     generator = generator()
     dataset = tf.data.Dataset.from_generator(
         generator=generator,
@@ -64,7 +64,7 @@ def get_dataset(generator, usage):
         )
     )
 
-    print(dataset.element_spec[0].shape)
+    
     assert dataset.element_spec[0].shape == (config["sequence_length"], config["batch_size"]) +  FEATURE_SHAPE
     assert dataset.element_spec[1].shape == (config["sequence_length"], config["batch_size"]) + FEATURE_SHAPE
 

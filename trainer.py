@@ -20,18 +20,22 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 max_epoch = 100 
 time_frame = 25
 inner_cell =  Q_graph()
+loss_fn = em_loss()
 rnn_cell = rnn_em(inner_cell, input_shape=(24, 24, 1))
 train_data = get_dataset(generator, "training")
 valid_data = get_dataset(generator, "validation")
 
 class Trainer:
 
-    def __init__(self, model=rnn_cell) -> None:
+    def __init__(self, model=rnn_cell, loss=loss_fn) -> None:
 
         self.now = None
         @property
         def model(self):
             return self.model 
+        @property
+        def loss_fn(self):
+            return loss
         
         def train(self,):
 
@@ -50,7 +54,7 @@ class Trainer:
                     # h, pred, gamma = hidden_state
                     
                     loss_value, responsibility = self.train_step(features, hidden_state, features_corrupted)
-                    ami_train = adjusted_mutual_info_score(groups[:-1], responsibility)
+                    ami_train = adjusted_mutual_info_score(groups[:-SEQUENCE_LENGHT + 1], responsibility)
                     train_loss_mean(loss_value)
                     train_ami_mean(ami_train)
                     if step % time_frame == 0: 
@@ -84,7 +88,7 @@ class Trainer:
                         responsibilities.append(responsibility)
             
                     responsibilities = tf.stack(responsibilities)
-                    ami_valid = adjusted_mutual_info_score(groups[:-1], responsibilities)
+                    ami_valid = adjusted_mutual_info_score(groups[:-SEQUENCE_LENGHT + 1], responsibilities)
                     valid_ami_mean(ami_valid)
                 valid_ami_mean = valid_ami_mean.result() 
                 valid_string = f"Validation--|mean_ami_score: {train_ami_score:.4f}"   
@@ -102,11 +106,11 @@ class Trainer:
                 hidden_state  = self.model(inputs, hidden_state)
                 _, pred, gamma = hidden_state
                 responsibilities.append(gamma)
-                loss_rnn_em  = em_loss(pred, features[i+1], gamma)
+                loss_rnn_em  = self.loss_fn(pred, features[i+1], gamma)
                 batch_loss += loss_rnn_em
         
-        gradients = tape.gradient(batch_loss, self.model.trainable_weights)
-        optimizer.apply_gradients(zip(gradients, self.model.trainable_weights)) 
+        gradients = tape.gradient(batch_loss, self.model.model.trainable_weights)
+        optimizer.apply_gradients(zip(gradients, self.model.model.trainable_weights)) 
         
         return batch_loss, tf.stack(responsibilities)
     
