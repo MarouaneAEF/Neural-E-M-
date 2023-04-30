@@ -98,8 +98,8 @@ class Trainer:
 
     @tf.function
     def train_step(self, features, hidden_state, features_corrupted):
+        responsibilities = []
         with tf.GradientTape() as tape:
-            responsibilities = []
             for i in range(SEQUENCE_LENGHT):
 
                 inputs = features_corrupted[i], features[i+1] 

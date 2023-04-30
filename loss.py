@@ -11,7 +11,8 @@ class em_loss(object):
     def log_normal_loss(samples, mu, sigma):
 
         return ( 
-            .5 * ((samples - mu) ** 2) / (sigma ** 2) + tf.math.log(sigma)
+            .5 * ((samples - mu) ** 2) / (tf.clip_by_value(sigma ** 2, 1e-6, 1e6) ** 2) 
+                + tf.math.log(tf.clip_by_value(sigma ** 2, 1e-6, 1e6))
         )
     @staticmethod
     def kl_normal_loss(mu1, mu2, sigma1, sigma2):
@@ -33,7 +34,7 @@ class em_loss(object):
         # by adding KL divergence between the pixels predictions with gamma_iK = 0 
         # (out-of-cluster) and prior of the pixel (cf. the article)
         inter_loss =  tf.reduce_sum(
-            (1 - tf.stop_gradient(gamma)) * self.kl_normal_loss(self.prior["mu"], mu, 1.0, self.prior["sigma"] )
+            (1 - tf.stop_gradient(gamma)) * self.kl_normal_loss(mu, self.prior["mu"], 1.0, self.prior["sigma"] )
             )
-        total_loss = intra_loss - inter_loss
+        total_loss = intra_loss + inter_loss
         return total_loss
