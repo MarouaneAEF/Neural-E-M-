@@ -47,8 +47,8 @@ for epoch in range(max_epoch):
         
         ami_train = adjusted_mutual_info_score(groups[:-SEQUENCE_LENGHT+1], gammas.numpy())
              
-    if step % 25 == 0:
-        print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Training AMI: {ami_train:.4f}")
+        if step % 25 == 0:
+            print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Training AMI: {ami_train:.4f}")
 
 
     # Validation loop
