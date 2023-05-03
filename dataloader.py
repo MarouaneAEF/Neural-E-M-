@@ -64,6 +64,7 @@ def get_dataset(generator, usage):
         )
     )
 
+    #TODO map for data normalization
     
     assert dataset.element_spec[0].shape == (config["sequence_length"], config["batch_size"]) +  FEATURE_SHAPE
     assert dataset.element_spec[1].shape == (config["sequence_length"], config["batch_size"]) + FEATURE_SHAPE
