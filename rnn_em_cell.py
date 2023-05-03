@@ -49,15 +49,14 @@ class rnn_em(object):
         with sigma fixed (see the article)
         """
 
-        mu , sigma = predictions, .25 
         # non normalized probability:
-        probs = (
-                (1 / tf.sqrt((2 * np.pi * sigma ** 2))) * 
-                     tf.exp(-(data - mu) ** 2 / (2 * sigma ** 2))
-                 )
+        p_zx = (tf.reduce_sum(
+            data * tf.math.log(predictions) + (1 - data) * tf.math.log(1 - predictions)
+            , axis=[1, 2, 3, 4]))
+
         # for each value data_x in data and the corresponding value mu_x in mu, 
         # this line computes the joint probability p(data, z| mu, sigma): 
-        probs = tf.reduce_sum(probs, axis=-1, keepdims=True) + 1e-6
+        probs = tf.exp(p_zx) + 1e-6
         return probs 
     def _e_step(self, predictions , targets):
         """
@@ -68,8 +67,7 @@ class rnn_em(object):
         
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
-        normalization_const = tf.reduce_sum(probs, 1, keepdims=True)
-        
+        normalization_const = tf.reduce_sum(tf.exp(probs), axis=1, keepdims=True)
         gamma = probs / normalization_const
         # gamma represents the responsibility of each mixture component for generating each observation in the input data. 
         # It is a tensor with the same shape as probs, which has dimensions (B, K, W, H, 1), 
