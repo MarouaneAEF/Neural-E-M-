@@ -52,7 +52,7 @@ class rnn_em(object):
         # non normalized joint probability p(z,x):
         p_zx = (tf.reduce_sum(
             data * tf.math.log(predictions) + (1 - data) * tf.math.log(1 - (predictions))
-            , axis=[1, 2, 3, 4]))
+            , axis=[2,3,4]))
         # print(f"p-zx: {p_zx}")
         # for each value data_x in data and the corresponding value mu_x in mu, 
         # this line computes the joint probability p(data, z| mu, sigma): 
@@ -69,7 +69,7 @@ class rnn_em(object):
         
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
-        normalization_const = tf.reduce_sum(tf.exp(probs), keepdims=True)
+        normalization_const = tf.reduce_sum(tf.exp(probs), axis=1, keepdims=True)
         # print(f"normalization_const: {normalization_const}")
         # p(z|x,psi)
         gamma = probs / normalization_const
@@ -92,8 +92,8 @@ class rnn_em(object):
         features, targets = inputs
         rnn_state, preds, gamma = state
         delta = preds - features
-        q_inputs = self.q_graph_input(delta, gamma)
-        q_output, rnn_state = self._q_graph_call(q_inputs, rnn_state)
+        q_inputs = self._q_graph_input(delta, gamma)
+        q_output, rnn_state = self.q_graph_call(q_inputs, rnn_state)
         gamma = self._e_step(q_output, targets)
 
         return (rnn_state, q_output, gamma)
