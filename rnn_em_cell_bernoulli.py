@@ -52,7 +52,7 @@ class rnn_em(object):
         # non normalized joint probability p(z,x):
         p_zx = (tf.reduce_sum(
             data * tf.math.log(predictions) + (1 - data) * tf.math.log(1 - (predictions))
-            , axis=[2,3,4]))
+            , axis=-1))
         # print(f"p-zx: {p_zx}")
         # for each value data_x in data and the corresponding value mu_x in mu, 
         # this line computes the joint probability p(data, z| mu, sigma): 

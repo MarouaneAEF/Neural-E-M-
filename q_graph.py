@@ -12,7 +12,7 @@ class Q_graph(tf.keras.Model):
         [  
             layers.LayerNormalization(), 
             # the size of the first dimension must be inferred from the input tensor 
-            layers.Reshape((-1, 24, 24, 1)),
+            layers.Reshape((-1, 28, 28, 1)),
             layers.Conv2D(
                 filters=32, kernel_size=4, strides=(2, 2), activation='relu'),
             layers.Conv2D(

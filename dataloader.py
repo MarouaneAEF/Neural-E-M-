@@ -4,10 +4,10 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import tensorflow as tf 
 
-NEM_DATA = os.environ.get("filename", "./data/flying_mnist_hard_3digits.h5")
-BATCH_SIZE = 64
-SEQUENCE_LENGHT = 20 + 1 
-FEATURE_SHAPE = (1, 24, 24, 1)
+NEM_DATA = os.environ.get("filename", "./data/shapes.h5")
+BATCH_SIZE = 1
+SEQUENCE_LENGHT = 0 + 1 #20 + 1 
+FEATURE_SHAPE = (1, 28, 28, 1)
 
 
 
