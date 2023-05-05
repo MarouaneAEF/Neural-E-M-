@@ -9,19 +9,25 @@ class em_loss(object):
 
     @staticmethod
     def cross_entropy_loss(samples, p_bernoulli):
-        samples * tf.math.log(tf.clip_by_value(p_bernoulli, 1e-6, 1e6)) + (1 - samples) * tf.math.log(1 - tf.clip_by_value(p_bernoulli, 1e-6, 1e6))
-    
+        return (
+            samples * tf.math.log(tf.clip_by_value(p_bernoulli, 1e-6, 1e6)) + 
+            (1 - samples) * tf.math.log(1 - tf.clip_by_value(p_bernoulli, 1e-6, 1e6))
+            )
+
+
     
     @staticmethod
     def kl_bernoulli_loss(p_1, p_2):
 
         return (
-            p_1 * tf.math.log(p_1 / tf.clip_by_value((p_2, 1e-6, 1e6))) + 
+            p_1 * tf.math.log(p_1 / tf.clip_by_value(p_2, 1e-6, 1e6)) + 
                 (1 - p_1) * tf.math.log((1 - p_1)/tf.clip_by_value((1 - p_2), 1e-6, 1e6))
                 )
 
     def __call__(self, predictions, data, gamma):
 
+        # print(f"gamma: {(gamma)}")
+        # print(f"prediction: {tf.shape(predictions)}")
         intra_loss = (
             tf.reduce_sum(tf.stop_gradient(gamma)) * 
             self.cross_entropy_loss(data, predictions)

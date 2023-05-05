@@ -16,13 +16,13 @@ class rnn_em(object):
 
         # initial prediction,  shape : (batch_size, K, W, H, C)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
-        pred  = tf.ones(shape=pred_shape, dtype=tf.float32)
+        pred  = .5 * tf.ones(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
         # shape_gama = tf.stack([batch_size, K] + list(self.gamma_shape))
         shape_gama =  list(self.gamma_shape)
-        gamma = tf.abs(tf.random.normal(shape=shape_gama, dtype=tf.float32))
+        gamma = tf.abs(tf.random.uniform(shape=shape_gama, dtype=tf.float32,minval=1e-3, maxval=1))
         # p(z) prior 
-        gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
+        # gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
         
         return rnn_state, pred, gamma
     
@@ -48,15 +48,15 @@ class rnn_em(object):
         computing the joint p(data, z| mu, sigma)
         with sigma fixed (see the article)
         """
-
+        # print(f"log(predictions): {tf.math.log(predictions)}")
         # non normalized joint probability p(z,x):
         p_zx = (tf.reduce_sum(
-            data * tf.math.log(predictions) + (1 - data) * tf.math.log(1 - predictions)
+            data * tf.math.log(predictions) + (1 - data) * tf.math.log(1 - (predictions))
             , axis=[1, 2, 3, 4]))
-
+        # print(f"p-zx: {p_zx}")
         # for each value data_x in data and the corresponding value mu_x in mu, 
         # this line computes the joint probability p(data, z| mu, sigma): 
-        probs = tf.exp(p_zx) + 1e-6
+        probs = tf.exp(p_zx) 
         return probs 
     def _e_step(self, predictions , targets):
         """
@@ -64,12 +64,16 @@ class rnn_em(object):
         """
 
         probs = self.compute_joint_probs(predictions, targets)
+
+        # print(f"probs: {probs}")
         
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
-        normalization_const = tf.reduce_sum(tf.exp(probs), axis=1, keepdims=True)
+        normalization_const = tf.reduce_sum(tf.exp(probs), keepdims=True)
+        # print(f"normalization_const: {normalization_const}")
         # p(z|x,psi)
         gamma = probs / normalization_const
+        # print(f"gamma:{gamma}")
         # gamma represents the responsibility of each mixture component for generating each observation in the input data. 
         # It is a tensor with the same shape as probs, which has dimensions (B, K, W, H, 1), 
         # where B is the batch size, K is the number of mixture components, and W, H, and 1 represent the dimensions of 

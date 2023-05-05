@@ -4,11 +4,11 @@ import numpy as np
 from sklearn.metrics import adjusted_mutual_info_score
 import numpy as np
 
-from rnn_em_cell import rnn_em
+from rnn_em_cell_bernoulli import rnn_em
 from q_graph import Q_graph
 from dataloader import get_dataset, generator, BATCH_SIZE, SEQUENCE_LENGHT
 from util import corrupted_data
-from loss import em_loss
+from bernoulli_loss import em_loss
 
 K = 3 
 lr = 1e-4
