@@ -40,7 +40,13 @@ class generator(object):
                             [:,:,None])
                 yield features, groups
 
-
+def normalize_data(data,groups):
+    # perform normalization here
+    data_norm = (data - tf.reduce_min(data, keepdims=True)) / (tf.reduce_max(data, keepdims=True) - tf.reduce_min(data, keepdims=True))
+    data_norm = tf.reshape(data_norm, shape=tf.shape(data))
+    
+    
+    return data_norm, groups
 
 
 def get_dataset(generator, usage):
@@ -65,6 +71,7 @@ def get_dataset(generator, usage):
     )
 
     #TODO map for data normalization
+    dataset.map(normalize_data)
     
     assert dataset.element_spec[0].shape == (config["sequence_length"], config["batch_size"]) +  FEATURE_SHAPE
     assert dataset.element_spec[1].shape == (config["sequence_length"], config["batch_size"]) + FEATURE_SHAPE

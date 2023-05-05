@@ -46,7 +46,7 @@ class Q_graph(tf.keras.Model):
                                                 kernel_size=4, 
                                                 strides=2, 
                                                 padding='same',
-                                                activation='relu'),
+                                                activation='sigmoid'),
                 layers.Flatten(),
                 
                 ])
