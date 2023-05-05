@@ -15,6 +15,8 @@ def corrupted_data(data):
     return noisy_data 
 
 def ami_score(input_tensor, target_tensor, channels_axis=2, depth=3):
+    print(f"input_tensor.numpy(): {input_tensor.numpy().shape}")
+    print(f"target_tensor.numpy(): {target_tensor.numpy().shape}")
     input_indices = np.argmax(input_tensor.numpy(), axis=channels_axis)
     one_hot_input = tf.one_hot(input_indices, depth=depth)
     target_indices = np.squeeze(target_tensor.numpy(), axis=channels_axis)

@@ -19,17 +19,19 @@ class em_loss(object):
     @staticmethod
     def kl_bernoulli_loss(p_1, p_2):
 
-        return (
+        return tf.squeeze(
             p_1 * tf.math.log(p_1 / tf.clip_by_value(p_2, 1e-6, 1e6)) + 
-                (1 - p_1) * tf.math.log((1 - p_1)/tf.clip_by_value((1 - p_2), 1e-6, 1e6))
-                )
+                (1 - p_1) * tf.math.log((1 - p_1)/tf.clip_by_value((1 - p_2), 1e-6, 1e6)), 
+                axis=-1)
 
     def __call__(self, predictions, data, gamma):
 
         # print(f"gamma: {(gamma)}")
         # print(f"prediction: {tf.shape(predictions)}")
+        
         intra_loss = (
-            tf.reduce_sum(tf.stop_gradient(gamma)) * 
+            tf.reduce_sum(
+            tf.stop_gradient(gamma)) * 
             self.cross_entropy_loss(data, predictions)
         )
 
@@ -41,6 +43,7 @@ class em_loss(object):
         )
 
         total_loss = intra_loss + inter_loss
+        print(f"total_loss:{tf.shape(total_loss)}")
         return total_loss
 
         
