@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-from sklearn.metrics import adjusted_mutual_info_score
+from util import ami_score
 import numpy as np
 
 from rnn_em_cell_bernoulli import rnn_em
@@ -10,8 +10,8 @@ from dataloader import get_dataset, generator, BATCH_SIZE, SEQUENCE_LENGHT
 from util import corrupted_data
 from bernoulli_loss import em_loss
 
-K = 3 
-lr = 1e-4
+K = 5 
+lr = 1e-5
 optimizer = keras.optimizers.Adam(learning_rate=lr)
 max_epoch = 100 
 inner_cell =  Q_graph()
@@ -43,12 +43,12 @@ for epoch in range(max_epoch):
         gradients = tape.gradient(batch_loss, rnn_cell.model.trainable_weights)
         optimizer.apply_gradients(zip(gradients, rnn_cell.model.trainable_weights)) 
         
-        gammas = tf.stack(gammas) # suitable size to be checked 
+        gammas = tf.stack(gammas) 
         
-        ami_train = adjusted_mutual_info_score(groups[:-SEQUENCE_LENGHT+1], gammas.numpy())
+        ami_train = ami_score(groups[:-SEQUENCE_LENGHT+1], gammas)
              
         if step % 25 == 0:
-            print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Training AMI: {ami_train:.4f}")
+            print(f"Training loss : {batch_loss:.4f} at batch {step:02d} at epoch{epoch:03d} Training AMI: {ami_train:.4f}")
 
 
     # Validation loop
@@ -63,7 +63,7 @@ for epoch in range(max_epoch):
             gammas.append(gamma)
         
         gammas = tf.stack(gammas)
-        ami_valid = adjusted_mutual_info_score(groups[:-1], gammas.numpy())
+        ami_valid = ami_score(groups[:-1], gammas)
         if step % 25 == 0:
             print(f"Training loss : {batch_loss:.4f} at batch {step:02d}. Validation AMI: {ami_valid:.4f}")
 
