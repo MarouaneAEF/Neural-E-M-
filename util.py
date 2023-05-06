@@ -1,18 +1,26 @@
 import tensorflow as tf 
 import numpy as np
 from sklearn.metrics import adjusted_mutual_info_score, adjusted_rand_score
-def corrupted_data(data):
 
-    # Assume x is a continuous tensor with shape 
-    # (batch_size, height, width, channels)
-    p = 0.2 # probability of bit flip
-    mask = tf.cast(
-        tf.random.uniform(tf.shape(data)) > p, 
-        dtype=data.dtype
-        )
-    noisy_data = data * mask
+def bitflip_noisy_static(data):
+    p = tf.constant([.1])
+    rando_noise = tf.random.uniform(tf.shape(data), maxval=1)
+    mask = tf.cast(tf.math.greater(p, rando_noise), dtype=tf.float32)
+    return data * (1 - mask) 
 
-    return noisy_data 
+def bitflip_noisy_uniform(data):
+    p = tf.constant([.2])
+    rando_noise = tf.random.uniform(tf.shape(data), maxval=1)
+    mask_noise = tf.random.uniform(tf.shape(data), maxval=1)
+    mask = tf.cast(tf.math.greater(p, mask_noise), dtype=tf.float32) 
+    noisy_data = mask * rando_noise + (1 - mask) * data
+    return noisy_data
+
+def bitflip_noisy(data):
+    p = tf.constant([.2])
+    rando_noise = tf.random.uniform(tf.shape(data), maxval=1)
+    mask = tf.cast(tf.math.greater(p, rando_noise), dtype=tf.float32)
+    return data * (1 - mask) 
 
 def ami_score(input_tensor, target_tensor, channels_axis=2, depth=3):
     # print(f"input_tensor.numpy(): {input_tensor.numpy().shape}")
