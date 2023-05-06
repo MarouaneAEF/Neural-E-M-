@@ -5,24 +5,23 @@ class rnn_em(object):
 
     def __init__(self, q_graph, input_shape):
         self.model = q_graph
-        # (K, W, H, C)
+        # (H, W, 1)
         self.input_shape = input_shape
-        # (K, W, H, 1)
-        self.gamma_shape = list(self.input_shape)[:-1] + [1]
+        
 
     def initial_state(self, batch_size, K):
         # initial rnn hidden state
         rnn_state = None
 
-        # initial prediction,  shape : (batch_size, K, W, H, C)
+        # initial prediction,  shape : (batch_size, K, W, H, 1)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
+        
         pred  = .5 * tf.ones(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
-        # shape_gama = tf.stack([batch_size, K] + list(self.gamma_shape))
-        shape_gama =  list(self.gamma_shape)
-        gamma = tf.abs(tf.random.uniform(shape=shape_gama, dtype=tf.float32,minval=1e-3, maxval=1))
+        shape_gamma = tf.stack([batch_size, K] + list(self.input_shape))
+        gamma = tf.abs(tf.random.uniform(shape=shape_gamma, dtype=tf.float32, maxval=1))
         # p(z) prior 
-        # gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
+        gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
         
         return rnn_state, pred, gamma
     
@@ -35,11 +34,11 @@ class rnn_em(object):
     def q_graph_call(self, q_input, rnn_state):
         
         q_shape = tf.shape(q_input)
-        M = tf.math.reduce_prod(list(self.input_shape))
-        reshaped_q_input = tf.reshape(q_input, 
-                                      shape=tf.stack([q_shape[0] * q_shape[1], M])
-                                      )
-        predictions, rnn_state = self.model(reshaped_q_input, rnn_state)
+        faltten_img_shape = tf.math.reduce_prod(list(self.input_shape))
+        # reshaped_q_input = tf.reshape(q_input, 
+        #                               shape=tf.stack([q_shape[0] * q_shape[1], faltten_img_shape])
+        #                               )
+        predictions, rnn_state = self.model(q_input, rnn_state)
 
         return tf.reshape(predictions, shape=q_shape), rnn_state 
     
@@ -91,6 +90,7 @@ class rnn_em(object):
 
         features, targets = inputs
         rnn_state, preds, gamma = state
+        print(f"preds: {preds.get_shape()}")
         delta = preds - features
         q_inputs = self._q_graph_input(delta, gamma)
         q_output, rnn_state = self.q_graph_call(q_inputs, rnn_state)
