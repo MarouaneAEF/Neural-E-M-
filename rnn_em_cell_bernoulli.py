@@ -38,10 +38,7 @@ class rnn_em(object):
         reshaped_q_input = tf.reshape(q_input, 
                                       shape=tf.stack([q_shape[0] * q_shape[1], M])
                                       )
-        # print("q_shape", q_input.get_shape())
-        # print("reshaped_q_input", reshaped_q_input.get_shape())
         predictions, rnn_state = self.model(reshaped_q_input, rnn_state)
-        # print("predictions_rnn", predictions.get_shape())
         return tf.reshape(predictions, shape=q_shape), rnn_state 
     
     def _compute_joint_probs(self, predictions, data):
@@ -51,9 +48,6 @@ class rnn_em(object):
         """
         log_p_zx = data * tf.math.log(tf.clip_by_value(predictions,  1e-6, 1e6)) + (1 - data) * tf.math.log(tf.clip_by_value(1 - (predictions), 1e-6, 1e6))
         log_p_zx = tf.reduce_sum(log_p_zx, axis=4, keepdims=True)
-        # probs = tf.exp(log_p_zx)
-        # p_xz = predictions ** data * (1 - predictions) ** (1 - data)
-        # p_xz = tf.reduce_sum(p_xz, axis=4, keepdims=True) + 1e-6
         p_zx = tf.math.exp(log_p_zx)
         return p_zx
     def _e_step(self, predictions , targets):
@@ -63,8 +57,6 @@ class rnn_em(object):
 
         probs = self._compute_joint_probs(predictions, targets)
 
-        # print(f"probs: {probs}")
-        
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
         normalization_const = tf.reduce_sum(probs, axis=1, keepdims=True)
@@ -89,7 +81,6 @@ class rnn_em(object):
 
         features, targets = inputs
         rnn_state, preds, gamma = state
-        # print(f"preds: {preds.get_shape()}")
         delta = preds - features
         q_inputs = self._q_graph_input(delta, gamma)
         q_output, rnn_state = self.q_graph_call(q_inputs, rnn_state)

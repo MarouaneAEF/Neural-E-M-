@@ -59,5 +59,5 @@ class Q_graph(tf.keras.Model):
         x = self.bloc_encoder(inputs)
         x, theta = self.rnn(x, initial_state=theta)
         x = self.decoder_bloc(x)
-        # print("q_output:", x.get_shape())
+
         return x, theta
