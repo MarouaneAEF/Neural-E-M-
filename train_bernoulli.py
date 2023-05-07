@@ -9,7 +9,7 @@ import h5py
 
 from rnn_em_cell_bernoulli import rnn_em
 from q_graph import Q_graph
-from bernoulli_dataloader import get_dataset, generator, BATCH_SIZE
+from static_dataloader import get_dataset, generator, BATCH_SIZE
 from util import bitflip_noisy_static, ami_score
 from bernoulli_loss import em_loss
 
