@@ -29,6 +29,8 @@ for epoch in range(max_epoch):
         # h, pred, gamma = hidden_state
         batch_loss = .0
         gammas = []
+        # A single RNN-EM step is used for each timestep. May be we would better use more
+        # thant one step 
         with tf.GradientTape() as tape:
             for i in range(SEQUENCE_LENGHT):
 

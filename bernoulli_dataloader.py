@@ -68,7 +68,7 @@ def get_dataset(generator, usage):
         )
     )
 
-    dataset.map(normalize_data)
+    # dataset.map(normalize_data)
     #TODO map for data normalization
     # dataset.map(normalize_data)
     
