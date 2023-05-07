@@ -66,7 +66,7 @@ class Trainer:
                         )     
                         print(step_string)
                         
-                    # Display metrics at the end of each epoch.
+                # Display metrics at the end of each epoch.
                 train_acc = train_loss_mean.result()
                 train_ami_score = train_ami_mean.result()
                 train_string = (
