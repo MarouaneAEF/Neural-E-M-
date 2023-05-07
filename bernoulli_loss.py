@@ -9,8 +9,7 @@ class em_loss(object):
 
     @staticmethod
     def cross_entropy_loss(samples, p_bernoulli):
-        # samples = tf.squeeze(samples, axis=-1)
-        # p_bernoulli = tf.squeeze(p_bernoulli, axis=-1)
+       
         cross_enropy = (
             samples * tf.math.log(tf.clip_by_value(p_bernoulli, 1e-6, 1e6)) + 
             (1 - samples) * tf.math.log(1 - tf.clip_by_value(p_bernoulli, 1e-6, 1e6))
@@ -22,11 +21,7 @@ class em_loss(object):
     
     @staticmethod
     def kl_bernoulli_loss(p_1, p_2):
-       # kl_loss = (
-        #     p_1 * tf.math.log(tf.clip_by_value(p_1 / p_2, 1e-6, 1e6)) +
-        #     (1 - p_1) * tf.math.log(tf.clip_by_value((1 - p_1) / (1 - p_2), 1e-6, 1e6))
-        #     )
-
+     
        kl_loss = ( 
                 p_1 * tf.math.log( tf.clip_by_value((p_1 /p_2), 1e-6, 1e6)) + 
                 (1 - p_1) * tf.math.log((1 - p_1)/tf.clip_by_value((1 - p_2),1e-6, 1e6)
@@ -54,8 +49,6 @@ class em_loss(object):
             
             axis=None)
         
-        # print(f"intra: {intra_loss}")
-        # print(f"inter: {inter_loss}")
         total_loss = - intra_loss + inter_loss
     
         return total_loss
