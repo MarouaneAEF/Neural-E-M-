@@ -11,7 +11,7 @@ In the case of RNN-EM, there are K copies of the RNN, each with its own hidden s
 
 Their is no formal proof about taking this choice of input to the RNNs. One may think about taking only x as input which may be at the first glance intuitive but a poor choice. 
 
-The choice of using the difference between the mean and the input scaled by a factor as input to the RNNs is motivated by the underlying generative model the authors are about to settle. The model assumes that the data x is generated from a mixture of K Normal/Bernoulli distributions with $\psi_{k}$ as the mean and fixed variance/Bernoulli parameter respectively. The scaling factor $\gamma_{k} = P(z_k|x,\psi) = \frac{P(z,x|\psi)}{\Sum_{z}P(z,x|\psi)}$ controls the influence of the mean of each Gaussian/Bernoulli parameter on the input x.
+The choice of using the difference between the mean and the input scaled by a factor as input to the RNNs is motivated by the underlying generative model the authors are about to settle. The model assumes that the data x is generated from a mixture of K Normal/Bernoulli distributions with $\psi_{k}$ as the mean and fixed variance/Bernoulli parameter respectively. The scaling factor $\gamma_{k} = P(z_k|x,\psi) = \frac{P(z_{k},x|\psi)}{\sum_{z_{k}}P(z_{k},x|\psi)}$ controls the influence of the mean of each Gaussian/Bernoulli parameter on the input x.
 
 By using $\gamma_{k}(\psi_{k} - x)$ as input to the RNNs, RNN-EM is essentially learning to estimate the parameters of the mixture model by iteratively refining the estimates of the means/Bernoulli parameter and the scaling factors. This allows, normally, the model to better capture the underlying distribution of the data and converge to a more accurate solution. The convergence is not guaranteed though.
 
