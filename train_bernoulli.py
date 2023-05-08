@@ -119,6 +119,10 @@ for epoch in range(50):
                     print("Early stopping!")
                     model_name = f'rnn_em_model_epoch{epoch}.h5'
                     rnn_cell.model.save_weights(model_name)
+                    continue_training = False
                     break
+
+    if not continue_training:
+        break    
 
 
