@@ -60,7 +60,7 @@ class StaticTrainer(Trainer):
     def model(self):
         return self.checkpoint.model
     
-    def train(self, train_data, valid_data, epoch, evaluate_every=25):
+    def train(self, train_data, valid_data, epoch, evaluate_every=5):
         train_loss_mean = Mean()
         ckpt_mgr = self.checkpoint_manager
         ckpt = self.checkpoint

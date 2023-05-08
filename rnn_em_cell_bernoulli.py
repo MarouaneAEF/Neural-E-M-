@@ -16,7 +16,7 @@ class rnn_em(object):
         # initial prediction,  shape : (batch_size, K, W, H, 1)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
         
-        pred  = .5 * tf.ones(shape=pred_shape, dtype=tf.float32)
+        pred  =  tf.zeros(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
         shape_gamma = tf.stack([batch_size, K] + list(self.input_shape))
         gamma = tf.abs(tf.random.uniform(shape=shape_gamma, dtype=tf.float32, maxval=1))
@@ -46,9 +46,10 @@ class rnn_em(object):
         computing the joint p(data, z| mu, sigma)
         with sigma fixed (see the article)
         """
-        log_p_zx = data * tf.math.log(tf.clip_by_value(predictions,  1e-6, 1e6)) + (1 - data) * tf.math.log(tf.clip_by_value(1 - (predictions), 1e-6, 1e6))
-        log_p_zx = tf.reduce_sum(log_p_zx, axis=4, keepdims=True)
-        p_zx = tf.math.exp(log_p_zx)
+        p_zx = tf.reduce_sum(predictions ** data * (1 - predictions) ** (1 - data), axis=4, keepdims=True) + 1e-6
+        # log_p_zx = data * tf.math.log(tf.clip_by_value(predictions,  1e-6, 1e6)) + (1 - data) * tf.math.log(tf.clip_by_value(1 - (predictions), 1e-6, 1e6))
+        # log_p_zx = tf.reduce_sum(log_p_zx, axis=4, keepdims=True)
+        # p_zx = tf.math.exp(log_p_zx)
         return p_zx
     def _e_step(self, predictions , targets):
         """
