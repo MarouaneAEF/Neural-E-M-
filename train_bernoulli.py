@@ -71,7 +71,7 @@ n_iterations = 20
 best_valid_score = -float('inf')
 patience = 0 
 for epoch in range(50):
-    for step, (features, groups) in enumerate(train_data):
+    for step, (features, groups) in enumerate(train_data.take(10)):
         loss_rnn_em, gamma = train_step(features)  
         # printing out informations 
         train_loss_mean(loss_rnn_em)
@@ -83,10 +83,10 @@ for epoch in range(50):
             tami_score = train_ami_mean.result()
             train_string = f"training for one batch : loss={tloss:.4f}| ami_score={tami_score:.4f}"
             print(train_string)
-    train_loss_mean.reset_state() 
-    train_ami_mean.reset_state()
+            train_loss_mean.reset_state() 
+            train_ami_mean.reset_state()
 
-    for step , (features, groups) in enumerate(valid_data):
+    for step , (features, groups) in enumerate(valid_data.take(5)):
         loss_rnn_em, gamma = validation_step(features)
         ami_valid = ami_score(gamma, groups)
         valid_ami_mean(ami_valid)
@@ -96,29 +96,29 @@ for epoch in range(50):
             print(f"Epoch: {epoch + 1} at Step: {step + 1}:")
             vloss= valid_loss_mean.result()
             vami_score = valid_ami_mean.result()
-            validation_string = f"validation for one batch: loss={vloss:.4f}| ami_score={vami_score:.4f}"
+            validation_string = f"validation for one batch: loss={vloss:.4f}| ami_score={vami_score:.4f}| patience={patience:02d}"
             print(validation_string)
 
             
-    # Display metrics at the end of each epoch.
-    valid_loss = valid_loss_mean.result()
-    valid_ami_score = valid_ami_mean.result()
-    validation_string = (
-        f"Validation Epoch--|mean_loss:{valid_loss:.4f}|mean_ami_score: {valid_ami_score:.4f}"
-                    )
-    print(validation_string)  
-    valid_ami_mean.reset_state()   
-    valid_loss_mean.reset_state()
+    # # Display metrics at the end of each epoch.
+    # valid_loss = valid_loss_mean.result()
+    # valid_ami_score = valid_ami_mean.result()
+    # validation_string = (
+    #     f"Validation Epoch--|mean_loss:{valid_loss:.4f}|mean_ami_score: {valid_ami_score:.4f}"
+    #                 )
+    # print(validation_string)  
+            valid_ami_mean.reset_state()   
+            valid_loss_mean.reset_state()
 
-    if valid_ami_score > best_valid_score:
-        best_valid_score = valid_ami_score
-        patience = 0
-    else:
-        patience += 1 
-        if patience >= 10:
-            print("Early stopping!")
-            model_name = f'rnn_em_model_epoch{epoch}.h5'
-            rnn_cell.model.save_weights(model_name)
-            break
+            if vami_score > best_valid_score:
+                best_valid_score = vami_score
+                patience = 0
+            else:
+                patience += 1 
+                if patience >= 10:
+                    print("Early stopping!")
+                    model_name = f'rnn_em_model_epoch{epoch}.h5'
+                    rnn_cell.model.save_weights(model_name)
+                    break
 
 
