@@ -117,7 +117,7 @@ for epoch in range(50):
                 patience += 1 
                 if patience >= 10:
                     print("Early stopping!")
-                    model_name = f'rnn_em_model_epoch{epoch}.h5'
+                    model_name = f'./models/rnn_em_model_epoch{epoch}.h5'
                     rnn_cell.model.save_weights(model_name)
                     continue_training = False
                     break
