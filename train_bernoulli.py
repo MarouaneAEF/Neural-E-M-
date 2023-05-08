@@ -4,8 +4,8 @@ import tensorflow as tf
 from tensorflow.keras.metrics import Mean
 import numpy as np
 import matplotlib.pyplot as plt 
-from sklearn.metrics import adjusted_mutual_info_score
-import h5py
+
+
 
 from rnn_em_cell_bernoulli import rnn_em
 from q_graph import Q_graph
