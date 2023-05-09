@@ -25,10 +25,10 @@ def bitflip_noisy(data):
 
 
 def ami_score(predictions, targets, K=3):
-    predictions = tf.reshape(predictions, [-1, K])
-    pred_idx = tf.math.argmax(predictions, axis=-1)
-    targets = tf.reshape(targets, (-1,))
-    amis = adjusted_mutual_info_score(pred_idx.numpy().ravel(),
+    resp_indices = tf.math.argmax(predictions, axis=1)
+    predictions = tf.reshape(resp_indices, shape=(-1,))
+    targets = tf.reshape(targets, shape=(-1,))
+    amis = adjusted_mutual_info_score(predictions.numpy().ravel(),
                                        targets.numpy().ravel())
     return amis
 

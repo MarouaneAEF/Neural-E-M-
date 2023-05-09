@@ -14,7 +14,7 @@ from util import bitflip_noisy_static, ami_score
 from bernoulli_loss import em_loss
 
 K = 3 
-lr = 1e-4
+lr = 5e-4
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 max_epoch = 100 
 inner_cell =  Q_graph()
@@ -70,8 +70,9 @@ valid_loss_mean = Mean()
 n_iterations = 20
 best_valid_score = -float('inf')
 patience = 0 
+continue_training = True
 for epoch in range(50):
-    for step, (features, groups) in enumerate(train_data.take(10)):
+    for step, (features, groups) in enumerate(train_data):
         loss_rnn_em, gamma = train_step(features)  
         # printing out informations 
         train_loss_mean(loss_rnn_em)
@@ -86,7 +87,7 @@ for epoch in range(50):
             train_loss_mean.reset_state() 
             train_ami_mean.reset_state()
 
-    for step , (features, groups) in enumerate(valid_data.take(5)):
+    for step, (features, groups) in enumerate(valid_data):
         loss_rnn_em, gamma = validation_step(features)
         ami_valid = ami_score(gamma, groups)
         valid_ami_mean(ami_valid)
@@ -94,9 +95,9 @@ for epoch in range(50):
 
         if step % 10 == 0:
             print(f"Epoch: {epoch + 1} at Step: {step + 1}:")
-            vloss= valid_loss_mean.result()
+            vloss = valid_loss_mean.result()
             vami_score = valid_ami_mean.result()
-            validation_string = f"validation for one batch: loss={vloss:.4f}| ami_score={vami_score:.4f}| patience={patience:02d}"
+            validation_string = f"validation for one batch: loss={vloss:.4f}| ami_score ={vami_score:.4f}| patience={patience:02d}"
             print(validation_string)
 
             

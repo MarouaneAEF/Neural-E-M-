@@ -3,7 +3,7 @@ import tensorflow as tf
 
 class em_loss(object):
 
-    def __init__(self, prior=0.1):
+    def __init__(self, prior=0.):
         self.prior = prior
         
 
