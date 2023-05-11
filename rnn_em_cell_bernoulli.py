@@ -9,14 +9,14 @@ class rnn_em(object):
         self.input_shape = input_shape
         
 
-    def initial_state(self, batch_size, K):
+    def initial_state(self, batch_size, K=3):
         # initial rnn hidden state
         rnn_state = None
 
         # initial prediction,  shape : (batch_size, K, W, H, 1)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
         
-        pred  =  tf.zeros(shape=pred_shape, dtype=tf.float32)
+        pred  =  0.33 * tf.ones(shape=pred_shape, dtype=tf.float32)
         # initial gamma, shape (batch_size, K, W, H, 1)
         shape_gamma = tf.stack([batch_size, K] + list(self.input_shape))
         gamma = tf.abs(tf.random.uniform(shape=shape_gamma, dtype=tf.float32, maxval=1))

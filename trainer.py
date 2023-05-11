@@ -11,6 +11,8 @@ from tensorflow.keras.optimizers.schedules import PiecewiseConstantDecay
 from util import bitflip_noisy_static, ami_score
 from static_dataloader import BATCH_SIZE
 
+
+
 class Trainer(ABC):
     """basic rnn-em training class"""
     def __init__(self, em_cell, 
@@ -24,9 +26,11 @@ class Trainer(ABC):
                                  optimizer=Adam(learning_rate),
                                  model=self.em_cell.model)
     @abstractclassmethod
+    @tf.function
     def train_step():
         """implment the iterative EM for some step number"""
     @abstractclassmethod
+    @tf.function
     def evaluate():
         """ evalutate the AMI score on validation data set"""
     @abstractclassmethod

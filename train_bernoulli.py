@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorflow.keras.metrics import Mean
 import numpy as np
 import matplotlib.pyplot as plt 
-
+import datetime
 
 
 from rnn_em_cell_bernoulli import rnn_em
@@ -14,13 +14,23 @@ from util import bitflip_noisy_static, ami_score
 from bernoulli_loss import em_loss
 
 K = 3 
-lr = 5e-4
+lr = .0001
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 max_epoch = 100 
 inner_cell =  Q_graph()
 loss_fn = em_loss()
 rnn_cell = rnn_em(inner_cell, input_shape=(28, 28, 1))
 
+# setting checkpoint
+checkpoint_dir = './ckpt/static'
+checkpoint = tf.train.Checkpoint(step = tf.Variable(0),
+                                 ami = tf.Variable(-1e10),
+                                 optimizer=optimizer,
+                                 model=rnn_cell.model)
+
+checkpoint_manager = tf.train.CheckpointManager(checkpoint=checkpoint,
+                                                directory=checkpoint_dir,
+                                                max_to_keep=3)
 
 train_data = get_dataset(generator, "training")
 valid_data = get_dataset(generator, "validation")
@@ -68,9 +78,10 @@ valid_ami_mean = Mean()
 train_loss_mean = Mean()
 valid_loss_mean = Mean()
 n_iterations = 20
-best_valid_score = -float('inf')
+best_valid_score = -1e10
 patience = 0 
 continue_training = True
+
 for epoch in range(50):
     for step, (features, groups) in enumerate(train_data):
         loss_rnn_em, gamma = train_step(features)  
@@ -116,9 +127,11 @@ for epoch in range(50):
                 patience = 0
             else:
                 patience += 1 
-                if patience >= 10:
+                if patience >= 250:
                     print("Early stopping!")
-                    model_name = f'./models/rnn_em_model_epoch{epoch}.h5'
+                    now = datetime.datetime.now()
+                    current_time = now.strftime("%Y-%m-%d_%H:%M:%S")
+                    model_name = f'./models/rnn_em_model_epoch_{current_time}{epoch}.h5'
                     rnn_cell.model.save_weights(model_name)
                     continue_training = False
                     break
