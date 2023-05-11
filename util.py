@@ -28,8 +28,7 @@ def ami_score(predictions, targets, K=3):
     resp_indices = tf.math.argmax(predictions, axis=1)
     predictions = tf.reshape(resp_indices, shape=(-1,))
     targets = tf.reshape(targets, shape=(-1,))
-    amis = adjusted_mutual_info_score(predictions.numpy().ravel(),
-                                       targets.numpy().ravel())
+    amis = adjusted_mutual_info_score(predictions.numpy().ravel(), targets.numpy().ravel())
     return amis
 
 

@@ -30,7 +30,6 @@ class Trainer(ABC):
     def train_step():
         """implment the iterative EM for some step number"""
     @abstractclassmethod
-    @tf.function
     def evaluate():
         """ evalutate the AMI score on validation data set"""
     @abstractclassmethod
@@ -73,24 +72,22 @@ class StaticTrainer(Trainer):
 
             ckpt.step.assign_add(1)
             step = ckpt.step.numpy()
-            loss_rnn_em, gamma = self.train_step(features)  
-            train_loss_mean(loss_rnn_em)
-            
-                    
+            loss_rnn_em, _ = self.train_step(features)  
+            train_loss_mean(loss_rnn_em)      
             if step % evaluate_every == 0:
                 print(f"Epoch: {epoch + 1} at Step: {step + 1}:")
                 tloss = train_loss_mean.result()
                 train_loss_mean.reset_state() 
                 ami_value = self.evaluate(valid_data)
-                duration = time.perf_counter() - now
+                duration = time.perf_counter() - self.now
                 train_string = f"training for one batch : loss={tloss.numpy():.4f}| ami_score={ami_value.numpy():.4f}| duration={duration:.2f}s"
                 print(train_string)
-                if ami_value <= ckpt.ami:
-                    now = time.perf_counter()
+                if ami_value.numpy() <= ckpt.ami:
+                    self.now = time.perf_counter()
                     continue
                 ckpt.ami = ami_value
                 ckpt_mgr.save()
-                now = time.perf_counter()
+                self.now = time.perf_counter()
     
     @tf.function
     def train_step(self, features, n_iterations=20, K=3):
@@ -101,26 +98,26 @@ class StaticTrainer(Trainer):
                 inputs = (features_corrupted, features) 
                 # E-step : computing gammas
                 hidden_state  = self.em_cell(inputs, hidden_state)
-                rnn_state, preds, gamma = hidden_state
+                _, preds, gamma = hidden_state
                 loss_rnn_em  = self.loss(preds, features, gamma) 
             # M-step : maximizing EM loss interpolated with kl loss 
             gradients = tape.gradient(loss_rnn_em, self.checkpoint.model.trainable_weights)
             self.checkpoint.optimizer.apply_gradients(zip(gradients, self.checkpoint.model.trainable_weights))
         return loss_rnn_em, gamma
     
-    @tf.function
+    
     def evaluate(self, dataset, K=3):
         ami_values = []
+        hidden_state = self.em_cell.initial_state(BATCH_SIZE, K)
         for features, groups in dataset:
-            hidden_state = self.em_cell.initial_state(BATCH_SIZE, K)
             features_corrupted = bitflip_noisy_static(features)
             inputs = (features_corrupted, features)
             hidden_state  = self.em_cell(inputs, hidden_state)
-            rnn_state, preds, gamma = hidden_state
+            _, _, gamma = hidden_state
             # loss_rnn_em  = self.loss(preds, features, gamma)
             ami_valid = ami_score(gamma, groups)
             ami_values.append(ami_valid)
-            return tf.reduce_mean(ami_values)
+        return tf.reduce_mean(ami_values)
         
     def restore(self):
         if self.checkpoint_manager.latest_checkpoint:

@@ -5,7 +5,7 @@ from tensorflow.keras.metrics import Mean
 import numpy as np
 import matplotlib.pyplot as plt 
 import datetime
-
+import time
 
 from rnn_em_cell_bernoulli import rnn_em
 from q_graph import Q_graph
@@ -59,33 +59,35 @@ def train_step(features, n_iterations=20):
     # optimizer.apply_gradients(zip(gradients, rnn_cell.model.trainable_weights)) 
     return loss_rnn_em, gamma
 
-@tf.function
-def validation_step(features):
+
+def validation(dataset):
+    ami_values = []
     hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
-    features_corrupted = bitflip_noisy_static(features)
-    inputs = (features_corrupted, features)
-    hidden_state  = rnn_cell(inputs, hidden_state)
-    rnn_state, preds, gamma = hidden_state
-    loss_rnn_em  = loss_fn(preds, features, gamma)
-    return loss_rnn_em, gamma
+    for features, groups in dataset:
+        features_corrupted = bitflip_noisy_static(features)
+        inputs = (features_corrupted, features)
+        hidden_state  = rnn_cell(inputs, hidden_state)
+        _, _, gamma = hidden_state
+        # loss_rnn_em  = loss_fn(preds, features, gamma)
+        ami_valid = ami_score(gamma, groups)
+        ami_values.append(ami_valid)
+
+    return tf.reduce_mean(ami_values)
+        
 
 
 # # # # # # # # # # # #
 #   Trainning loop    #
 # # # # # # # # # # # #
-train_ami_mean = Mean()
-valid_ami_mean = Mean()
-train_loss_mean = Mean()
-valid_loss_mean = Mean()
-n_iterations = 20
-best_valid_score = -1e10
-patience = 0 
-continue_training = True
+n_iterations = 100
 
-for epoch in range(50):
+for epoch in range(n_iterations):
+    train_ami_mean = Mean()
+    train_loss_mean = Mean()
+    now = time.perf_counter()
     for step, (features, groups) in enumerate(train_data):
+        checkpoint.step.assign_add(1)
         loss_rnn_em, gamma = train_step(features)  
-        # printing out informations 
         train_loss_mean(loss_rnn_em)
         ami_train = ami_score(gamma, groups)
         train_ami_mean(ami_train)         
@@ -93,50 +95,15 @@ for epoch in range(50):
             print(f"Epoch: {epoch + 1} at Step: {step + 1}:")
             tloss = train_loss_mean.result()
             tami_score = train_ami_mean.result()
-            train_string = f"training for one batch : loss={tloss:.4f}| ami_score={tami_score:.4f}"
-            print(train_string)
             train_loss_mean.reset_state() 
             train_ami_mean.reset_state()
-
-    for step, (features, groups) in enumerate(valid_data):
-        loss_rnn_em, gamma = validation_step(features)
-        ami_valid = ami_score(gamma, groups)
-        valid_ami_mean(ami_valid)
-        valid_loss_mean(loss_rnn_em)
-
-        if step % 10 == 0:
-            print(f"Epoch: {epoch + 1} at Step: {step + 1}:")
-            vloss = valid_loss_mean.result()
-            vami_score = valid_ami_mean.result()
-            validation_string = f"validation for one batch: loss={vloss:.4f}| ami_score ={vami_score:.4f}| patience={patience:02d}"
-            print(validation_string)
-
-            
-    # # Display metrics at the end of each epoch.
-    # valid_loss = valid_loss_mean.result()
-    # valid_ami_score = valid_ami_mean.result()
-    # validation_string = (
-    #     f"Validation Epoch--|mean_loss:{valid_loss:.4f}|mean_ami_score: {valid_ami_score:.4f}"
-    #                 )
-    # print(validation_string)  
-            valid_ami_mean.reset_state()   
-            valid_loss_mean.reset_state()
-
-            if vami_score > best_valid_score:
-                best_valid_score = vami_score
-                patience = 0
-            else:
-                patience += 1 
-                if patience >= 250:
-                    print("Early stopping!")
-                    now = datetime.datetime.now()
-                    current_time = now.strftime("%Y-%m-%d_%H:%M:%S")
-                    model_name = f'./models/rnn_em_model_epoch_{current_time}{epoch}.h5'
-                    rnn_cell.model.save_weights(model_name)
-                    continue_training = False
-                    break
-
-    if not continue_training:
-        break    
-
-
+            vami_score = validation(valid_data.take(30))
+            duration = time.perf_counter() - now
+            train_string = f"training for one batch : loss={tloss.numpy():.4f}| t_ami_score={tami_score:.4f} | v_ami_score={vami_score.numpy():.4f} | duration={duration:.2f}s"
+            print(train_string)
+            if vami_score.numpy() <= checkpoint.ami:
+                now = time.perf_counter()
+                continue
+            checkpoint.ami = vami_score
+            checkpoint_manager.save()
+            now = time.perf_counter()
