@@ -22,12 +22,13 @@ class em_loss(object):
     @staticmethod
     def kl_bernoulli_loss(p_1, p_2):
      
-       kl_loss = ( 
-                p_1 * tf.math.log( tf.clip_by_value((p_1 /p_2), 1e-6, 1e6)) + 
-                (1 - p_1) * tf.math.log((1 - p_1)/tf.clip_by_value((1 - p_2),1e-6, 1e6)
-        )
-        )
-       return kl_loss    
+        # kl_loss = ( 
+        #             p_1 * tf.math.log( tf.clip_by_value((p_1 /p_2), 1e-6, 1e6)) + 
+        #             (1 - p_1) * tf.math.log(tf.clip_by_value((1 - p_1)/(1 - p_2),1e-6, 1e6))
+        #)
+        # for prior p_1 = 0 :
+        kl_loss = tf.math.log(tf.clip_by_value(1 / (1 - p_2), 1e-6, 1e6))
+        return kl_loss    
         
 
 
