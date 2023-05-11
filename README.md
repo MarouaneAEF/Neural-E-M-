@@ -23,11 +23,10 @@ The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergenc
 # Running Bernoulli parameterization of the spatial mixture experiment
 
 To run the RNN-EM training experiment, execute the following command (en mode "spectateur"):
-
+```
 $> chmod u+x run_experience.sh
 $> ./run_experience.sh
-
-
+```
 # Post Scriptum:
 - This projects consider:
     - RNN-EM with Bernoulli parameterization for pixels in data, "small detail" 
