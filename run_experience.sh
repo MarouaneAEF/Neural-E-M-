@@ -1,5 +1,7 @@
 #!/bin/bash
-
+echo ##########################################################################
+echo This process trains a neural version on Expectation-Maximization algorithm
+echo ##########################################################################
 # cloning repo of interest and dowloading paper's datasets to the data directory 
 git clone --depth 1 https://github.com/MarouaneAEF/Neural-E-M-.git \
 && rm -rf Neural-E-M/.git/ \

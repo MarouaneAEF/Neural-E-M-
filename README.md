@@ -1,11 +1,67 @@
-# Neural-E-M-: Projet and motivations 
-The goal of this project is to implement a General Neural "counterpart" for EM algorithm, which is a efficient maximum likelihood approach. 
+
+# Introduction : Expectation-Maximization algorithm a.k.a EM algorithm 
+
+## Maximum Likelihood Approaches 
+The essence of this study is centered around an elegant, time-honored algorithm first presented in a seminal paper by Arthur Dempster, Nan Laird, and Donald Rubin in 1977. The EM algorithm is commonly employed for determining probability distribution parameters through a maximum likelihood approach by finding maximum likelihood or maximum a posteriori (MAP) estimate, making it an efficient non-Bayesian approach. 
+
+A gentle and short introduction to the algorithm is, according to my taste, given at: http://www.seanborman.com/publications/EM_algorithm.pdf. The EM algorithm has been used in different application domains: https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm#cite_note-Dempster1977-2. 
+
+To add a bit of humor, I know two 'do-it-all' algorithms - EM for statistics and the S-procedure for optimization theory
+
+## What about Bayesian Approaches 
+
+Pure Neural/Deep Bayesian approaches are intractable. The intractability arises from backpropagating on Neural Networks with millions of decision variables (weights + biases) that we have to deal with at the loss minimization step.
+
+I would like to cite one recent paper working arround the intractability of the task:
+@article{izmailov_subspace_2019,
+  title={Subspace Inference for Bayesian Deep Learning},
+  author={Izmailov, Pavel and Maddox, Wesley and Kirichenko, Polina and Garipov, Timur and Vetrov, Dmitry and Wilson, Andrew Gordon},
+  journal={Uncertainty in Artificial Intelligence (UAI)},
+  year={2019}
+}
+
+## Optimization and complexity analysis aspect 
+
+From an optimization theory point of view, neural networks are trained by minimizing a task using a first-order oracle-based optimizer. However, computing gradients for very large-scale optimization problems, such as those in pure deep Bayesian approaches, can be problematic when trying to obtain a solution with $\epsilon$ precision. The complexity of this task is about $\O(\frac{1}{\epsilon})$ in the smooth case and about $\O(\frac{1}{\epsilon^2})$ for the non-smooth case.
+
+One way to mitigate the aforementioned intractability is to use Free Derivative-based optimizers. There are many types of these optimizers, and some frameworks have a complexity of $\O(\frac{1}{s^n})$ for some positive integer n.
+
+# Neural-E-M-: Projet and motivations and implementation 
+The goal of this project is to implement a General Neural "counterpart" for EM algorithm, which is an efficient maximum likelihood approach especially when combined with a first order oracle type optimizer in case of large scale optimization problem.
+
 To this end, I have identified a relevant paper as an example approach, which I am currently implementing.
-This is not an official implementation of the paper: https://proceedings.neurips.cc/paper_files/paper/2017/file/d2cd33e9c0236a8c2d8bd3fa91ad3acf-Paper.pdf. 
+This is non official EM implementation of the paper: 
 
-This places us in the context of Generative Deep Learning, which is generally known to be "more demanding to train" but more suitable in Decision-Making context. (ex. see Bishop:Pattern Recognition and Machine Learning)
+@article{DBLP:journals/corr/abs-1708-03498,
+  author       = {Klaus Greff and
+                  Sjoerd van Steenkiste and
+                  J{\"{u}}rgen Schmidhuber},
+  title        = {Neural Expectation Maximization},
+  journal      = {CoRR},
+  volume       = {abs/1708.03498},
+  year         = {2017},
+  url          = {http://arxiv.org/abs/1708.03498},
+  eprinttype    = {arXiv},
+  eprint       = {1708.03498},
+  timestamp    = {Mon, 13 Aug 2018 16:47:59 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-1708-03498.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
 
-# Part of review of the article  
+This places us in the context of Generative Deep Learning, which is generally known to be more challenging to train, but more suitable in Decision-Making context and generalizes better.
+
+see: 
+@book{10.5555/1162264,
+author = {Bishop, Christopher M.},
+title = {Pattern Recognition and Machine Learning (Information Science and Statistics)},
+year = {2006},
+isbn = {0387310738},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg}
+}
+
+
+# Specific part of review of the article  
 
 In the case of RNN-EM, there are K copies of the RNN, each with its own hidden state denoted as $\theta_{k}$. At each timestep, the input to the k-th RNN is $\gamma_{k}(\psi_{k} - x)$, where $\gamma_{k}$ is a scalar parameter (the responsibility terme), $\psi_{k}$ is the k-th vector of the parametric representation of a spatial mixture of $K$ components (interpreted as the mean vector or p Bernoulli parameter), and x is the input data. 
 
@@ -20,18 +76,19 @@ The authors say : " ... In order to accurately mimic the M-Step (4) with an RNN,
 
 The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergence penelization term in the training Loss are good workaround of the aforementioned restrictions and others though.
 
-# Running Bernoulli parameterization of the spatial mixture experiment
+# Running Process of a Bernoulli Parameterization Version of the Spatial K-Mixture Data Type
 
 To run the RNN-EM training experiment, execute the following command (en mode "spectateur"):
 ```
 $> chmod u+x run_experience.sh
 $> ./run_experience.sh
 ```
+
 # Post Scriptum:
 - This projects consider:
-    - RNN-EM with Bernoulli parameterization for pixels in data, "small detail" 
-    - Authors static data and eventually other static data belonging to the state-of-the-art will be considered in the first place.  
-- Dataset of interest is named "shapes.h5" can be found here: https://www.dropbox.com/sh/1ue3lrfvbhhkt6s/AAB6WiZzH_mAtCjW6b9okMGea?dl=0.
-- (curious about picking up different data sets other than those for clustering purposes)
-- Feedback is always welcome: my training loss is decreasing, the AMI score is not increasing as fast. Slowly but surely!
+    - RNN-EM with Bernoulli parameterization for pixels in data, "small detail" we can chose a Noraml version. This choice is related to the data type itself which is binary   
+    - Authors static dataset and eventually other static dataset belonging to the state-of-the-art will be considered in the first place.  
+- STatic dataset of interest is named "shapes.h5" can be found here: https://www.dropbox.com/sh/1ue3lrfvbhhkt6s/AAB6WiZzH_mAtCjW6b9okMGea?dl=0.
+- Curious about picking up different data sets other than those for clustering purposes
+- Feedback is always welcome: my training loss is decreasing, the AMI score is not increasing as fast; Slowly but surely!
 
