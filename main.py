@@ -21,7 +21,7 @@ valid_data = get_dataset(generator, "validation")
 trainer = StaticTrainer(em_cell=em_cell, 
                         loss=loss_fn, 
                         learning_rate=1e-4)
-
-for epoch in range(50):
+n_epochs = 100
+for epoch in range(n_epochs):
 
     trainer.train(train_data, valid_data, epoch)

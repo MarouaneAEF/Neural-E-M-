@@ -27,6 +27,5 @@ The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergenc
     - Authors static data and eventually other static data belonging to the state-of-the-art will be considered in the first place.  
 - Dataset of interest is named "shapes.h5" can be found here: https://www.dropbox.com/sh/1ue3lrfvbhhkt6s/AAB6WiZzH_mAtCjW6b9okMGea?dl=0.
 - (curious about picking up different data sets other than those for clustering purposes)
-- Feedbacks are always welcomed: my training loss decreases, but without great AMI score. At this stage, further investigation is needed to understand these factors and improve the overall performance. 
-
+- Feedback is always welcome: my training loss is decreasing, the AMI score is not increasing as fast. Slowly but surely!
 
