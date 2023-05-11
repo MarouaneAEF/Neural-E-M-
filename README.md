@@ -5,7 +5,7 @@ This is not an official implementation of the paper: https://proceedings.neurips
 
 This places us in the context of Generative Deep Learning, which is generally known to be "more demanding to train" but more suitable in Decision-Making context. (ex. see Bishop:Pattern Recognition and Machine Learning)
 
-# Part of review of the article : 
+# Part of review of the article  
 
 In the case of RNN-EM, there are K copies of the RNN, each with its own hidden state denoted as $\theta_{k}$. At each timestep, the input to the k-th RNN is $\gamma_{k}(\psi_{k} - x)$, where $\gamma_{k}$ is a scalar parameter (the responsibility terme), $\psi_{k}$ is the k-th vector of the parametric representation of a spatial mixture of $K$ components (interpreted as the mean vector or p Bernoulli parameter), and x is the input data. 
 
@@ -20,7 +20,13 @@ The authors say : " ... In order to accurately mimic the M-Step (4) with an RNN,
 
 The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergence penelization term in the training Loss are good workaround of the aforementioned restrictions and others though.
 
+# Running Bernoulli parameterization of the spatial mixture experiment
 
+To run the RNN-EM training experiment, execute the following command:
+"```
+$> chmod u+x run_experience.sh
+$> ./run_experience.sh
+```"
 # Post Scriptum:
 - This projects consider:
     - RNN-EM with Bernoulli parameterization for pixels in data, "small detail" 
