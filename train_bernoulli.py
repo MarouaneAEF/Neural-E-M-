@@ -14,7 +14,7 @@ from util import bitflip_noisy_static, ami_score
 from bernoulli_loss import em_loss
 
 K = 3 
-lr = .0001
+lr = .0005
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 max_epoch = 100 
 inner_cell =  Q_graph()
