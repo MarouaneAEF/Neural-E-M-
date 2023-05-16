@@ -8,8 +8,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf 
 import time
 K = 3 
-lr = 1e-4
-max_epoch = 100 
+lr = 0.001 
 inner_cell =  Q_graph()
 loss_fn = em_loss()
 em_cell = rnn_em(inner_cell, input_shape=(28, 28, 1))
@@ -22,7 +21,7 @@ valid_data = get_dataset(generator, "validation")
 trainer = StaticTrainer(em_cell=em_cell, 
                         loss=loss_fn, 
                         learning_rate=1e-4)
-n_epochs = 100
+n_epochs = 120
 
 start = time.perf_counter()
 
