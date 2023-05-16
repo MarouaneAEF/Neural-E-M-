@@ -6,6 +6,7 @@ from trainer import StaticTrainer
 import os 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import tensorflow as tf 
+import time
 K = 3 
 lr = 1e-4
 max_epoch = 100 
@@ -22,6 +23,13 @@ trainer = StaticTrainer(em_cell=em_cell,
                         loss=loss_fn, 
                         learning_rate=1e-4)
 n_epochs = 100
+
+start = time.perf_counter()
+
 for epoch in range(n_epochs):
 
     trainer.train(train_data, valid_data, epoch)
+
+duration = time.perf_counter() - start
+
+print(f"training duration : {duration:.2f}s")
