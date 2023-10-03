@@ -80,7 +80,7 @@ The use of $\gamma_{k}(\psi_{k} - x)$ instead of $x$ and adding the KL divergenc
 
 # Running Process of a Bernoulli Parameterization Version of the Spatial K-Mixture Data Type
 
-To run the RNN-EM training experiment, execute the following command (en mode "spectateur"):
+To run the RNN-EM training experiment, execute the following command:
 ```
 $> chmod u+x run_experience.sh
 $> ./run_experience.sh
