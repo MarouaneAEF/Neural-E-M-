@@ -6,7 +6,7 @@ The essence of this study is centered around an elegant, time-honored algorithm 
 
 A gentle and short introduction to the algorithm is, according to my taste, given at: http://www.seanborman.com/publications/EM_algorithm.pdf. The EM algorithm has been used in different application domains: https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm#cite_note-Dempster1977-2. 
 
-To add a bit of humor, I know two 'do-it-all' algorithms - EM for statistics and the S-procedure for optimization theory
+
 
 ## What about Bayesian Approaches 
 
@@ -25,7 +25,7 @@ I would like to cite one recent paper working arround the intractability of the 
 
 From an optimization theory point of view, neural networks are trained by minimizing a task using a first-order oracle-based optimizer. However, computing gradients for very large-scale optimization problems, such as those in pure deep Bayesian approaches, can be problematic when trying to obtain a solution with $\epsilon$ precision. The complexity of this task is about $\mathcal{O}(\frac{1}{\epsilon})$ in the smooth case and about $\mathcal{O}(\frac{1}{\epsilon^2})$ for the non-smooth case.
 
-One way to mitigate the aforementioned intractability is to use Free Derivative-based optimizers. There are many types of these optimizers, and some frameworks have a complexity of $\mathcal{O}(\frac{1}{s^n})$ for some positive integer n.
+One way to mitigate the aforementioned intractability is to use Free Derivative-based optimizers. There are many types of these optimizers, and some frameworks have a complexity of $\mathcal{O}(\frac{1}{\epsilon^n})$ for some positive integer n.
 
 # Neural-E-M-: Projet motivations and Implementation 
 The goal of this project is to implement a General Neural "counterpart" for EM algorithm, which is an efficient maximum likelihood approach especially when combined with a first order oracle type optimizer in case of large scale optimization problem.
