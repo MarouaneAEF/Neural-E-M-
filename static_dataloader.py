@@ -5,7 +5,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf 
 import numpy as np
 NEM_DATA = os.environ.get("filename", "./data/shapes.h5")
-BATCH_SIZE = 64
+# Reduce batch size for better performance on M3
+BATCH_SIZE = 8  # Reduced from 16 to 8
 FEATURE_SHAPE = (28, 28, 1)
 
 

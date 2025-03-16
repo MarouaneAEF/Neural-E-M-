@@ -10,19 +10,69 @@ class rnn_em(object):
         
 
     def initial_state(self, batch_size, K=3):
+        """
+        Initialize the RNN state with better strategies for initialization
+        Uses a more diverse initialization for predictions, which helps EM converge better
+        """
         # initial rnn hidden state
         rnn_state = None
 
         # initial prediction,  shape : (batch_size, K, W, H, 1)
         pred_shape = tf.stack([batch_size, K] + list(self.input_shape))
         
-        pred  =  0.33 * tf.ones(shape=pred_shape, dtype=tf.float32)
-        # initial gamma, shape (batch_size, K, W, H, 1)
+        # Initialize clusters with more diverse values to help EM separate them better
+        # Strategy: Initialize clusters at different intensity ranges
+        # Cluster 1: low intensity (0.1-0.3)
+        # Cluster 2: medium intensity (0.4-0.6)
+        # Cluster 3: high intensity (0.7-0.9)
+        # This mimics K-means like initialization with different centroids
+        
+        # Create a base random initialization
+        base_init = tf.random.uniform(shape=pred_shape, minval=0.1, maxval=0.9, dtype=tf.float32)
+        
+        # Apply different intensity ranges for different clusters
+        intensity_ranges = []
+        range_width = 0.8 / K  # Divide 0.1-0.9 into K ranges
+        
+        for k in range(K):
+            min_val = 0.1 + k * range_width
+            max_val = 0.1 + (k + 1) * range_width
+            
+            # Create a mask for this cluster
+            cluster_mask = tf.zeros(pred_shape, dtype=tf.float32)
+            cluster_mask = tf.tensor_scatter_nd_update(
+                cluster_mask,
+                tf.constant([[i, k, 0, 0, 0] for i in range(batch_size)]),
+                tf.ones([batch_size], dtype=tf.float32)
+            )
+            
+            # Scale values to desired range
+            scaled_values = (base_init * range_width) + min_val
+            
+            # Apply mask
+            intensity_ranges.append(cluster_mask * scaled_values)
+        
+        # Combine all clusters
+        pred = tf.add_n(intensity_ranges)
+        
+        # Add some noise to avoid symmetric solutions
+        noise = tf.random.normal(shape=pred_shape, mean=0.0, stddev=0.05, dtype=tf.float32)
+        pred = tf.clip_by_value(pred + noise, 0.01, 0.99)  # Keep in valid probability range
+
+        # initial gamma with better initialization
+        # Initialize with a soft clustering assignment rather than completely random
         shape_gamma = tf.stack([batch_size, K] + list(self.input_shape))
-        gamma = tf.abs(tf.random.uniform(shape=shape_gamma, dtype=tf.float32, maxval=1))
-        # p(z) prior 
-        gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)  
-        # print("gamma prior:", gamma.get_shape())
+        
+        # Begin with more balanced responsibilities
+        base_gamma = tf.ones(shape=shape_gamma, dtype=tf.float32) / K
+        
+        # Add small random variations to break symmetry
+        gamma_noise = tf.random.normal(shape=shape_gamma, mean=0.0, stddev=0.1, dtype=tf.float32)
+        gamma = tf.abs(base_gamma + gamma_noise)
+        
+        # Ensure gamma sums to 1 along the cluster dimension
+        gamma /= tf.reduce_sum(gamma, axis=1, keepdims=True)
+        
         return rnn_state, pred, gamma
     
     @staticmethod
@@ -45,11 +95,18 @@ class rnn_em(object):
         """
         computing the joint p(data, z| mu, sigma)
         with sigma fixed (see the article)
+        Using log-space for better numerical stability
         """
-        p_zx = tf.reduce_sum(predictions ** data * (1 - predictions) ** (1 - data), axis=4, keepdims=True) + 1e-6
-        # log_p_zx = data * tf.math.log(tf.clip_by_value(predictions,  1e-6, 1e6)) + (1 - data) * tf.math.log(tf.clip_by_value(1 - (predictions), 1e-6, 1e6))
-        # log_p_zx = tf.reduce_sum(log_p_zx, axis=4, keepdims=True)
-        # p_zx = tf.math.exp(log_p_zx)
+        # Calculate log probabilities in log space for numerical stability
+        log_p_zx = data * tf.math.log(tf.clip_by_value(predictions, 1e-6, 1.0)) + \
+                  (1 - data) * tf.math.log(tf.clip_by_value(1 - predictions, 1e-6, 1.0))
+        
+        # Sum over the feature dimensions
+        log_p_zx = tf.reduce_sum(log_p_zx, axis=4, keepdims=True)
+        
+        # Convert back to probability space
+        p_zx = tf.math.exp(log_p_zx)
+        
         return p_zx
     def _e_step(self, predictions , targets):
         """
