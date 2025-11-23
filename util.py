@@ -22,6 +22,17 @@ def bitflip_noisy(data):
     mask = tf.cast(tf.math.greater(p, rando_noise), dtype=tf.float32)
     return data * (1 - mask) 
 
+
+def corrupted_data(data):
+    """
+    Simple corruption function used in the training loop.
+
+    Currently implemented as a bit-flip style noise on the input tensor.
+    This keeps the same shape as `data` and returns a noised version,
+    suitable for Bernoulli-style experiments.
+    """
+    return bitflip_noisy(data)
+
 def ami_score(input_tensor, target_tensor, channels_axis=2, depth=3):
     # print(f"input_tensor.numpy(): {input_tensor.numpy().shape}")
     # print(f"target_tensor.numpy(): {target_tensor.numpy().shape}")

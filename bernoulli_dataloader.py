@@ -68,9 +68,8 @@ def get_dataset(generator, usage):
         )
     )
 
-    dataset.map(normalize_data)
-    #TODO map for data normalization
-    # dataset.map(normalize_data)
+    # Normalisation des données
+    dataset = dataset.map(normalize_data)
     
     assert dataset.element_spec[0].shape ==  (config["batch_size"], 1) + FEATURE_SHAPE
     assert dataset.element_spec[1].shape == (config["batch_size"], 1) + FEATURE_SHAPE
