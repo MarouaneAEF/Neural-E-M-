@@ -13,12 +13,11 @@ class em_loss(object):
 
     @staticmethod
     def cross_entropy_loss(samples, p_bernoulli):
-       
+        p_clipped = tf.clip_by_value(p_bernoulli, 1e-6, 1.0 - 1e-6)
         cross_enropy = (
-            samples * tf.math.log(tf.clip_by_value(p_bernoulli, 1e-6, 1e6)) + 
-            (1 - samples) * tf.math.log(1 - tf.clip_by_value(p_bernoulli, 1e-6, 1e6))
-            )
-        
+            samples * tf.math.log(p_clipped) +
+            (1 - samples) * tf.math.log(1.0 - p_clipped)
+        )
         return cross_enropy
 
 
@@ -70,9 +69,12 @@ class em_loss(object):
         # Apply annealed weighting to the KL term
         total_loss = - intra_loss + kl_weight * inter_loss
         
-        # Print current KL weight every 100 steps
-        if self.step % 100 == 0:
-            tf.print("Current KL weight:", kl_weight)
+        # Print current KL weight every 100 steps (tf.cond required inside @tf.function)
+        tf.cond(
+            tf.equal(tf.math.mod(self.step, 100), 0),
+            lambda: tf.print("Current KL weight:", kl_weight),
+            lambda: None
+        )
     
         return total_loss
 

@@ -28,8 +28,9 @@ class Q_graph(tf.keras.Model):
             layers.Reshape(target_shape = (128, 1)),
             ])
         
-        # Simpler RNN with fewer units
-        self.rnn = layers.SimpleRNN(64, activation="sigmoid", return_state=True)
+        # LSTM replaces SimpleRNN: gating mechanisms prevent vanishing gradients
+        # across EM iterations, enabling the cell to track cluster state reliably
+        self.rnn = layers.LSTM(64, return_state=True)
 
         # Simplified decoder with fewer parameters
         self.decoder_bloc = tf.keras.Sequential(
@@ -55,7 +56,8 @@ class Q_graph(tf.keras.Model):
 
     def call(self, inputs, theta):
         x = self.bloc_encoder(inputs)
-        x, theta = self.rnn(x, initial_state=theta)
+        # LSTM returns (output, h_state, c_state); pack both states together
+        x, h_state, c_state = self.rnn(x, initial_state=theta)
+        theta = [h_state, c_state]
         x = self.decoder_bloc(x)
-
         return x, theta

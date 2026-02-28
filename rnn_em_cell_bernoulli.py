@@ -118,9 +118,8 @@ class rnn_em(object):
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
         normalization_const = tf.reduce_sum(probs, axis=1, keepdims=True)
-        # print(f"normalization_const: {normalization_const}")
-        # p(z|x,psi)
-        gamma = probs / normalization_const
+        # p(z|x,psi) — epsilon avoids division by zero when all cluster probs collapse to 0
+        gamma = probs / (normalization_const + 1e-10)
         # print(f"gamma:{gamma}")
         # gamma represents the responsibility of each mixture component for generating each observation in the input data. 
         # It is a tensor with the same shape as probs, which has dimensions (B, K, W, H, 1), 
