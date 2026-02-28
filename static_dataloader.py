@@ -39,12 +39,11 @@ class generator(object):
                 yield np.transpose(features, axes=[1,0,2,3,4]), np.transpose(groups, axes=[1,0,2,3,4])
 
 
-def normalize_data(data,groups):
-    # perform normalization here
-    data_norm = (data - tf.reduce_min(data, keepdims=True)) / (tf.reduce_max(data, keepdims=True) - tf.reduce_min(data, keepdims=True))
-    data_norm = tf.reshape(data_norm, shape=tf.shape(data))
-    
-    
+def normalize_data(data, groups):
+    # perform normalization here (reshape removed: it was redundant and caused static shape loss)
+    min_val = tf.reduce_min(data, keepdims=True)
+    max_val = tf.reduce_max(data, keepdims=True)
+    data_norm = (data - min_val) / (max_val - min_val + 1e-8)
     return data_norm, groups
 
 
@@ -69,10 +68,8 @@ def get_dataset(generator, usage):
         )
     )
 
-    # dataset.map(normalize_data)
-    #TODO map for data normalization
-    # dataset.map(normalize_data)
-    
+    dataset = dataset.map(normalize_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
     assert dataset.element_spec[0].shape ==  (config["batch_size"], 1) + FEATURE_SHAPE
     assert dataset.element_spec[1].shape == (config["batch_size"], 1) + FEATURE_SHAPE
 

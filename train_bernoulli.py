@@ -141,13 +141,14 @@ def train_step(features, n_iterations=20, epoch=0):  # Reduced from 40 to 20
         # Use a fixed number of iterations - we'll adjust this from outside the function
         for i in range(n_iterations):
             with tf.GradientTape(persistent=True) as tape:
-                inputs = (features_corrupted, features) 
+                inputs = (features_corrupted, features)
                 # E-step : computing gammas
                 hidden_state  = rnn_cell(inputs, hidden_state)
                 rnn_state, preds, gamma = hidden_state
-                loss_rnn_em  = loss_fn(preds, features, gamma) 
-            # M-step : maximizing EM loss interpolated with kl loss 
+                loss_rnn_em  = loss_fn(preds, features, gamma)
+            # M-step : maximizing EM loss interpolated with kl loss
             gradients = tape.gradient(loss_rnn_em, rnn_cell.model.trainable_weights)
+            del tape  # Free persistent tape memory immediately after gradient computation
             # Apply gradient clipping to prevent exploding gradients
             gradients = [tf.clip_by_norm(g, 3.0) if g is not None else g for g in gradients]
             optimizer.apply_gradients(zip(gradients, rnn_cell.model.trainable_weights))
@@ -162,8 +163,9 @@ def validation(dataset):
     
     ami_values = []
     with tf.device(device):
-        hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
         for features, groups in dataset:
+            # Reset hidden state per batch to avoid state leakage across batches
+            hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
             features_corrupted = bitflip_noisy_static(features)
             inputs = (features_corrupted, features)
             hidden_state = rnn_cell(inputs, hidden_state)
