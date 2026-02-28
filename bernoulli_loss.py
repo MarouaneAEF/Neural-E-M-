@@ -69,13 +69,6 @@ class em_loss(object):
         # Apply annealed weighting to the KL term
         total_loss = - intra_loss + kl_weight * inter_loss
         
-        # Print current KL weight every 100 steps (tf.cond required inside @tf.function)
-        tf.cond(
-            tf.equal(tf.math.mod(self.step, 100), 0),
-            lambda: tf.print("Current KL weight:", kl_weight),
-            lambda: None
-        )
-    
         return total_loss
 
         
