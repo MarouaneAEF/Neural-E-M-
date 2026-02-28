@@ -68,12 +68,12 @@ def get_dataset(generator, usage):
         )
     )
 
-    dataset = dataset.map(normalize_data, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = dataset.map(normalize_data, num_parallel_calls=tf.data.AUTOTUNE)
 
     assert dataset.element_spec[0].shape ==  (config["batch_size"], 1) + FEATURE_SHAPE
     assert dataset.element_spec[1].shape == (config["batch_size"], 1) + FEATURE_SHAPE
 
-    return dataset.prefetch(tf.data.experimental.AUTOTUNE).cache()
+    return dataset.prefetch(tf.data.AUTOTUNE).cache()
 
 
            
