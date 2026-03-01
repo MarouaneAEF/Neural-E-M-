@@ -148,13 +148,14 @@ def validation(dataset):
 # ------------------------------------------------------------------
 # Training loop
 # ------------------------------------------------------------------
-n_iterations           = 100
-best_ami               = -1.0
-patience               = 0
-max_patience           = 5
-validation_frequency   = 50
+n_iterations            = 100
+best_ami                = -1.0
+patience                = 0
+max_patience            = 15   # plus permissif : v_ami est bruyant (15 batches)
+warmup_steps            = 100  # pas d'early stopping avant ce seuil
+validation_frequency    = 50
 visualization_frequency = 200
-validation_samples     = 15
+validation_samples      = 30   # plus de batches = estimation plus stable
 
 for epoch in range(n_iterations):
     train_ami_mean  = Mean()
@@ -208,13 +209,22 @@ for epoch in range(n_iterations):
                 if vami_score.numpy() > best_ami:
                     best_ami = vami_score.numpy()
                     print(f'  New best AMI: {best_ami:.4f}  (sigma={SIGMA})')
-            else:
+            elif int(checkpoint.step) > warmup_steps:
+                # Patience ne s'incrémente qu'après le warmup
+                # pour éviter qu'un v_ami initial chanceux bloque l'entraînement
                 patience += 1
 
             now = time.perf_counter()
 
-    if patience >= max_patience:
-        print(f'Early stopping after {epoch + 1} epochs')
-        break
+            if patience >= max_patience:
+                print(f'Early stopping at step {int(checkpoint.step)} '
+                      f'(epoch {epoch + 1})')
+                break
+
+    else:
+        # La boucle step s'est terminée normalement : continuer l'epoch suivante
+        continue
+    # La boucle step a été interrompue par break : sortir aussi de la boucle epoch
+    break
 
 print(f'Training complete. Best AMI: {best_ami:.4f}')
