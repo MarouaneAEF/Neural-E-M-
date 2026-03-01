@@ -115,7 +115,7 @@ def visualize_clusters(gamma, features, epoch, step):
     plt.tight_layout()
     
     # Save the figure
-    plt.savefig(f'./plots/clusters_epoch{epoch}_step{step}.png')
+    plt.savefig(f'./plots_pe/clusters_epoch{epoch}_step{step}.png')
     plt.close()
 
 # Fixed number of EM iterations: avoids Python-level retracing from variable n_iterations

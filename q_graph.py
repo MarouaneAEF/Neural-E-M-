@@ -6,26 +6,24 @@ class Q_graph(tf.keras.Model):
 
     def __init__(self):
         super(Q_graph, self).__init__()
-        
-        # Even more simplified encoder with fewer parameters - optimized for M3
-        self.bloc_encoder = tf.keras.Sequential(
-         [   
-            layers.LayerNormalization(), 
-            # Fix the reshape operation to handle the flattened input (784 = 28*28)
-            layers.Reshape((28, 28, 1)),
-            # Reduced number of filters and added batch normalization
+
+        self.layer_norm = layers.LayerNormalization()
+
+        # Positional encoding injected after reshape, before convolutions.
+        # Encoder now receives (B, 28, 28, 3): pixel value + (y, x) normalized coords.
+        # This lets the model distinguish spatially separate objects with identical intensities.
+        self.conv_encoder = tf.keras.Sequential(
+         [
             layers.Conv2D(
                 filters=8, kernel_size=3, strides=(2, 2), padding='same', activation='relu'),
             layers.BatchNormalization(),
             layers.Conv2D(
                 filters=16, kernel_size=3, strides=(2, 2), padding='same', activation='relu'),
             layers.BatchNormalization(),
-            # Removed the third conv layer to simplify the model
             layers.Flatten(),
-            # Reduced size of the dense layer
-            layers.Dense(128, activation = 'relu'),
+            layers.Dense(128, activation='relu'),
             layers.BatchNormalization(),
-            layers.Reshape(target_shape = (128, 1)),
+            layers.Reshape(target_shape=(128, 1)),
             ])
         
         # LSTM replaces SimpleRNN: gating mechanisms prevent vanishing gradients
@@ -54,10 +52,20 @@ class Q_graph(tf.keras.Model):
                 layers.Flatten(),
                 ])
 
+    @staticmethod
+    def _positional_encoding(batch_size):
+        """Build a (batch_size, 28, 28, 2) grid of normalized (y, x) coordinates."""
+        coords = tf.linspace(0.0, 1.0, 28)
+        grid_y, grid_x = tf.meshgrid(coords, coords, indexing='ij')  # (28, 28)
+        pos = tf.stack([grid_y, grid_x], axis=-1)                    # (28, 28, 2)
+        return tf.tile(pos[tf.newaxis], [batch_size, 1, 1, 1])        # (B, 28, 28, 2)
+
     def call(self, inputs, theta, training=False):
-        # Pass training flag so BatchNormalization uses batch stats during training
-        # and moving averages during inference — without this BN never learns
-        x = self.bloc_encoder(inputs, training=training)
+        batch_size = tf.shape(inputs)[0]
+        x = self.layer_norm(inputs, training=training)
+        x = tf.reshape(x, [batch_size, 28, 28, 1])
+        x = tf.concat([x, self._positional_encoding(batch_size)], axis=-1)  # (B, 28, 28, 3)
+        x = self.conv_encoder(x, training=training)
         x, h_state, c_state = self.rnn(x, initial_state=theta)
         theta = [h_state, c_state]
         x = self.decoder_bloc(x, training=training)
