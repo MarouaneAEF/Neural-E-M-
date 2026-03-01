@@ -1,26 +1,21 @@
 import h5py
 import os
-# shut INFO and WARNING messages up 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
-import tensorflow as tf 
+import numpy as np
+# shut INFO and WARNING messages up
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import tensorflow as tf
 
 NEM_DATA = os.environ.get("filename", "./data/flying_mnist_hard_3digits.h5")
-BATCH_SIZE = 64
-SEQUENCE_LENGHT = 20 + 1 
-FEATURE_SHAPE = (1, 28, 28, 1)
-
-
-
-
+BATCH_SIZE = 8
+SEQUENCE_LENGTH = 21
+FEATURE_SHAPE = (28, 28, 1)
 
 
 class generator(object):
-    # class wise configuration : commun for all batches and generator should not take 
-    # any argument 
     config = {
     "usage" : "training",
     "batch_size": BATCH_SIZE,
-    "sequence_length" : SEQUENCE_LENGHT ,
+    "sequence_length" : SEQUENCE_LENGTH,
     "filename" : NEM_DATA,
     "out_list" : ("features", "groups"),
     }
@@ -32,20 +27,18 @@ class generator(object):
             for i in range(0, num_batches):
                 start = i * self.config["batch_size"]
                 end = (i + 1) * self.config["batch_size"]
-                features = (hdf5[self.config["usage"]]["features"]
-                            [:self.config["sequence_length"], start:end]
-                            [:,:,None])
-                groups =  (hdf5[self.config["usage"]]["groups"]
-                            [:self.config["sequence_length"], start:end]
-                            [:,:,None])
+                # HDF5 shape: (T, N, H, W) -> transpose to (B, T, H, W, 1)
+                features = hdf5[self.config["usage"]]["features"][:self.config["sequence_length"], start:end]
+                groups   = hdf5[self.config["usage"]]["groups"][:self.config["sequence_length"], start:end]
+                features = np.transpose(features, axes=[1, 0, 2, 3])[:, :, :, :, np.newaxis]
+                groups   = np.transpose(groups,   axes=[1, 0, 2, 3])[:, :, :, :, np.newaxis]
                 yield features, groups
 
-def normalize_data(data,groups):
-    # perform normalization here
-    data_norm = (data - tf.reduce_min(data, keepdims=True)) / (tf.reduce_max(data, keepdims=True) - tf.reduce_min(data, keepdims=True))
-    data_norm = tf.reshape(data_norm, shape=tf.shape(data))
-    
-    
+
+def normalize_data(data, groups):
+    min_val = tf.reduce_min(data, keepdims=True)
+    max_val = tf.reduce_max(data, keepdims=True)
+    data_norm = (data - min_val) / (max_val - min_val + 1e-8)
     return data_norm, groups
 
 
@@ -59,24 +52,20 @@ def get_dataset(generator, usage):
         generator.config["usage"] = usage
     else:
         raise ValueError(f"Invalid usage: {usage}")
-    
+
     generator = generator()
     dataset = tf.data.Dataset.from_generator(
         generator=generator,
         output_types=(tf.float32, tf.float32),
         output_shapes=(
-                (config["sequence_length"], config["batch_size"]) + FEATURE_SHAPE,
-                (config["sequence_length"], config["batch_size"]) +  FEATURE_SHAPE,
+            (config["batch_size"], config["sequence_length"]) + FEATURE_SHAPE,
+            (config["batch_size"], config["sequence_length"]) + FEATURE_SHAPE,
         )
     )
 
-    #TODO map for data normalization
-    dataset.map(normalize_data)
-    
-    assert dataset.element_spec[0].shape == (config["sequence_length"], config["batch_size"]) +  FEATURE_SHAPE
-    assert dataset.element_spec[1].shape == (config["sequence_length"], config["batch_size"]) + FEATURE_SHAPE
+    dataset = dataset.map(normalize_data, num_parallel_calls=tf.data.AUTOTUNE)
 
-    return dataset.prefetch(tf.data.experimental.AUTOTUNE).cache()
+    assert dataset.element_spec[0].shape == (config["batch_size"], config["sequence_length"]) + FEATURE_SHAPE
+    assert dataset.element_spec[1].shape == (config["batch_size"], config["sequence_length"]) + FEATURE_SHAPE
 
-
-           
+    return dataset.prefetch(tf.data.AUTOTUNE).cache()
