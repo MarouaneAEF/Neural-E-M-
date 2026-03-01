@@ -45,10 +45,12 @@ lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
     decay_rate=0.9,
     staircase=True)
 
+IMAGE_SIZE = 24   # flying_mnist images are 24x24
+
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
-inner_cell = Q_graph()
+inner_cell = Q_graph(image_size=IMAGE_SIZE)
 loss_fn = em_loss(initial_kl_weight=0.01, max_kl_weight=0.3, annealing_rate=0.001)
-rnn_cell = rnn_em(inner_cell, input_shape=(28, 28, 1))
+rnn_cell = rnn_em(inner_cell, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 1))
 
 os.makedirs('./logs', exist_ok=True)
 os.makedirs('./plots_dynamic', exist_ok=True)
@@ -94,13 +96,13 @@ N_EM_ITERATIONS = 15
 
 # Hidden state is passed as explicit TF tensors with fixed shapes so that
 # @tf.function traces once and never retraces across frames or sequences.
-# Shapes: lstm_h/c = (B*K, LSTM_UNITS), preds/gamma = (B, K, 28, 28, 1)
+# Shapes: lstm_h/c = (B*K, LSTM_UNITS), preds/gamma = (B, K, IMAGE_SIZE, IMAGE_SIZE, 1)
 @tf.function(input_signature=[
-    tf.TensorSpec(shape=(BATCH_SIZE, 1, 28, 28, 1), dtype=tf.float32),
+    tf.TensorSpec(shape=(BATCH_SIZE, 1, IMAGE_SIZE, IMAGE_SIZE, 1), dtype=tf.float32),
     tf.TensorSpec(shape=(BATCH_SIZE * K, LSTM_UNITS), dtype=tf.float32),
     tf.TensorSpec(shape=(BATCH_SIZE * K, LSTM_UNITS), dtype=tf.float32),
-    tf.TensorSpec(shape=(BATCH_SIZE, K, 28, 28, 1), dtype=tf.float32),
-    tf.TensorSpec(shape=(BATCH_SIZE, K, 28, 28, 1), dtype=tf.float32),
+    tf.TensorSpec(shape=(BATCH_SIZE, K, IMAGE_SIZE, IMAGE_SIZE, 1), dtype=tf.float32),
+    tf.TensorSpec(shape=(BATCH_SIZE, K, IMAGE_SIZE, IMAGE_SIZE, 1), dtype=tf.float32),
 ])
 def train_step_frame(frame, lstm_h, lstm_c, preds, gamma):
     """One gradient step on a single frame; LSTM state passed explicitly."""

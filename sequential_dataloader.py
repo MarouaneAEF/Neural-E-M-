@@ -8,7 +8,7 @@ import tensorflow as tf
 NEM_DATA = os.environ.get("filename", "./data/flying_mnist_hard_3digits.h5")
 BATCH_SIZE = 8
 SEQUENCE_LENGTH = 21
-FEATURE_SHAPE = (28, 28, 1)
+FEATURE_SHAPE = (24, 24, 1)
 
 
 class generator(object):
