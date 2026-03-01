@@ -27,11 +27,11 @@ class generator(object):
             for i in range(0, num_batches):
                 start = i * self.config["batch_size"]
                 end = (i + 1) * self.config["batch_size"]
-                # HDF5 shape: (T, N, H, W) -> transpose to (B, T, H, W, 1)
+                # HDF5 shape: (T, N, H, W, 1) -> transpose to (B, T, H, W, 1)
                 features = hdf5[self.config["usage"]]["features"][:self.config["sequence_length"], start:end]
                 groups   = hdf5[self.config["usage"]]["groups"][:self.config["sequence_length"], start:end]
-                features = np.transpose(features, axes=[1, 0, 2, 3])[:, :, :, :, np.newaxis]
-                groups   = np.transpose(groups,   axes=[1, 0, 2, 3])[:, :, :, :, np.newaxis]
+                features = np.transpose(features, axes=[1, 0, 2, 3, 4])
+                groups   = np.transpose(groups,   axes=[1, 0, 2, 3, 4])
                 yield features, groups
 
 
