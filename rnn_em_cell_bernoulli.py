@@ -81,15 +81,14 @@ class rnn_em(object):
         # gamma is processed through the e-step 
         return inputs * tf.stop_gradient(gamma)
 
-    def q_graph_call(self, q_input, rnn_state):
-        
+    def q_graph_call(self, q_input, rnn_state, training=False):
         q_shape = tf.shape(q_input)
         M = tf.math.reduce_prod(list(self.input_shape))
-        reshaped_q_input = tf.reshape(q_input, 
+        reshaped_q_input = tf.reshape(q_input,
                                       shape=tf.stack([q_shape[0] * q_shape[1], M])
                                       )
-        predictions, rnn_state = self.model(reshaped_q_input, rnn_state)
-        return tf.reshape(predictions, shape=q_shape), rnn_state 
+        predictions, rnn_state = self.model(reshaped_q_input, rnn_state, training=training)
+        return tf.reshape(predictions, shape=q_shape), rnn_state
     
     def _compute_joint_probs(self, predictions, data):
         """

@@ -58,7 +58,7 @@ try:
             print("Testing GPU computation...")
             result = tf.matmul(test_matrix, tf.transpose(test_matrix))
             print("GPU test successful: matrix shape (1000, 1000)")
-            print("GPU acceleration active ✓")
+            print("GPU acceleration active")
     
     print("Current KL weight: 0.01")
     

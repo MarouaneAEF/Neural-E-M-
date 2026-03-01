@@ -54,10 +54,11 @@ class Q_graph(tf.keras.Model):
                 layers.Flatten(),
                 ])
 
-    def call(self, inputs, theta):
-        x = self.bloc_encoder(inputs)
-        # LSTM returns (output, h_state, c_state); pack both states together
+    def call(self, inputs, theta, training=False):
+        # Pass training flag so BatchNormalization uses batch stats during training
+        # and moving averages during inference — without this BN never learns
+        x = self.bloc_encoder(inputs, training=training)
         x, h_state, c_state = self.rnn(x, initial_state=theta)
         theta = [h_state, c_state]
-        x = self.decoder_bloc(x)
+        x = self.decoder_bloc(x, training=training)
         return x, theta
