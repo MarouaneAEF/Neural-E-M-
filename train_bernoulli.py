@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import datetime
 import time
 
+# Thread limits must be set before any TF operation initializes the runtime
+tf.config.threading.set_inter_op_parallelism_threads(2)   # orchestration threads
+tf.config.threading.set_intra_op_parallelism_threads(4)   # within-op threads (4 P-cores)
+
 # Configure TensorFlow for Apple M3 GPU
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 try:
@@ -28,17 +32,12 @@ try:
             c = tf.matmul(a, b)
             print(f"GPU test successful: matrix shape {c.shape}")
         
-        print("GPU acceleration active ✓")
+        print("GPU acceleration active ")
     else:
         print("No GPU found, using CPU instead")
 except Exception as e:
     print(f"Error configuring GPU: {e}")
     print("Falling back to CPU")
-
-# Limit CPU threads: heavy computation is on the Metal GPU;
-# leaving cores for the OS keeps the machine responsive
-tf.config.threading.set_inter_op_parallelism_threads(2)   # orchestration threads
-tf.config.threading.set_intra_op_parallelism_threads(4)   # within-op threads (4 P-cores)
 
 from rnn_em_cell_bernoulli import rnn_em
 from q_graph import Q_graph
@@ -71,7 +70,7 @@ os.makedirs('./plots', exist_ok=True)
 
 # setting checkpoint
 checkpoint_dir = './ckpt/static'
-checkpoint = tf.train.Checkpoint(step = tf.Variable(0),
+checkpoint = tf.train.Checkpoint(step = tf.Variable(0, dtype=tf.int64),
                                  ami = tf.Variable(-1e10),
                                  optimizer=optimizer,
                                  model=rnn_cell.model)
@@ -95,7 +94,7 @@ def visualize_clusters(gamma, features, epoch, step):
     cluster_assignments = tf.argmax(gamma, axis=1)  # shape: [batch_size, H, W, 1]
     
     # Take the first image in the batch for visualization
-    sample_img = features[0, :, :, 0].numpy()
+    sample_img = features[0, 0, :, :, 0].numpy()
     sample_assignment = cluster_assignments[0, :, :, 0].numpy()
     
     # Create a figure with two subplots

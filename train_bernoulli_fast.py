@@ -26,7 +26,7 @@ try:
             c = tf.matmul(a, b)
             print(f"GPU test successful: matrix shape {c.shape}")
         
-        print("GPU acceleration active ✓")
+        print("GPU acceleration active")
     else:
         print("No GPU found, using CPU instead")
 except Exception as e:
@@ -40,7 +40,7 @@ from util import bitflip_noisy_static, ami_score
 from bernoulli_loss import em_loss
 
 # FAST DEV VERSION SETTINGS
-print("🚀 Running FAST development version with minimal settings")
+print("Running FAST development version with minimal settings")
 K = 3 
 # Simple fixed learning rate for fast dev
 lr = 0.001
@@ -97,7 +97,7 @@ def visualize_clusters(gamma, features):
     plt.tight_layout()
     plt.savefig(f'./plots/clusters_fast.png')
     plt.close()
-    print("✅ Visualization saved to ./plots/clusters_fast.png")
+    print("Visualization saved to ./plots/clusters_fast.png")
 
 @tf.function
 def train_step(features, n_iterations=10):  # Extremely reduced iterations
@@ -143,7 +143,7 @@ def validation(dataset):
 # # # # # # # # # # # #
 #  FAST Training loop #
 # # # # # # # # # # # #
-print("⏳ Starting fast training...")
+print(" Starting fast training...")
 n_iterations = 3  # Minimal number of epochs
 
 for epoch in range(n_iterations):
@@ -184,7 +184,7 @@ for epoch in range(n_iterations):
     checkpoint_manager.save()
     print(f"Model saved at step {checkpoint.step.numpy()}")
 
-print("🎉 Fast training completed!")
+print(" Fast training completed!")
 # Final visualization
 for features, groups in valid_data.take(1):
     hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
@@ -194,4 +194,4 @@ for features, groups in valid_data.take(1):
     visualize_clusters(gamma, features)
     break
 
-print("✨ All done! Check ./plots/clusters_fast.png for visualization.") 
+print(" All done! Check ./plots/clusters_fast.png for visualization.") 
