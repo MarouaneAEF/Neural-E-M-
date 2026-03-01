@@ -214,7 +214,7 @@ for epoch in range(n_iterations):
                     print(f"Error visualizing clusters: {e}")
 
             if vami_score.numpy() > checkpoint.ami:
-                checkpoint.ami = vami_score
+                checkpoint.ami.assign(vami_score)
                 checkpoint_manager.save()
                 patience = 0
                 if vami_score.numpy() > best_ami:
