@@ -81,15 +81,14 @@ class rnn_em(object):
         # gamma is processed through the e-step 
         return inputs * tf.stop_gradient(gamma)
 
-    def q_graph_call(self, q_input, rnn_state):
-        
+    def q_graph_call(self, q_input, rnn_state, training=False):
         q_shape = tf.shape(q_input)
         M = tf.math.reduce_prod(list(self.input_shape))
-        reshaped_q_input = tf.reshape(q_input, 
+        reshaped_q_input = tf.reshape(q_input,
                                       shape=tf.stack([q_shape[0] * q_shape[1], M])
                                       )
-        predictions, rnn_state = self.model(reshaped_q_input, rnn_state)
-        return tf.reshape(predictions, shape=q_shape), rnn_state 
+        predictions, rnn_state = self.model(reshaped_q_input, rnn_state, training=training)
+        return tf.reshape(predictions, shape=q_shape), rnn_state
     
     def _compute_joint_probs(self, predictions, data):
         """
@@ -118,9 +117,8 @@ class rnn_em(object):
         # summing up over all z's scenarios 
         # print("probs", tf.shape(probs))
         normalization_const = tf.reduce_sum(probs, axis=1, keepdims=True)
-        # print(f"normalization_const: {normalization_const}")
-        # p(z|x,psi)
-        gamma = probs / normalization_const
+        # p(z|x,psi) — epsilon avoids division by zero when all cluster probs collapse to 0
+        gamma = probs / (normalization_const + 1e-10)
         # print(f"gamma:{gamma}")
         # gamma represents the responsibility of each mixture component for generating each observation in the input data. 
         # It is a tensor with the same shape as probs, which has dimensions (B, K, W, H, 1), 

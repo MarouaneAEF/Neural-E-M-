@@ -13,31 +13,26 @@ class em_loss(object):
 
     @staticmethod
     def cross_entropy_loss(samples, p_bernoulli):
-       
+        p_clipped = tf.clip_by_value(p_bernoulli, 1e-6, 1.0 - 1e-6)
         cross_enropy = (
-            samples * tf.math.log(tf.clip_by_value(p_bernoulli, 1e-6, 1e6)) + 
-            (1 - samples) * tf.math.log(1 - tf.clip_by_value(p_bernoulli, 1e-6, 1e6))
-            )
-        
+            samples * tf.math.log(p_clipped) +
+            (1 - samples) * tf.math.log(1.0 - p_clipped)
+        )
         return cross_enropy
 
 
     
     @staticmethod
     def kl_bernoulli_loss(p_1, p_2):
-        # Using the full KL divergence formula for Bernoulli distributions
-        kl_loss = (
-            p_1 * tf.math.log(tf.clip_by_value(p_1 / p_2, 1e-6, 1e6)) + 
-            (1 - p_1) * tf.math.log(tf.clip_by_value((1 - p_1) / (1 - p_2), 1e-6, 1e6))
+        eps = 1e-6
+        # Clip p_2 directly: bounds the gradient 1/(1-p_2) and log ratios
+        p_2 = tf.clip_by_value(p_2, eps, 1.0 - eps)
+        # Add eps to p_1 to avoid 0*log(0/p)=NaN when prior=0
+        p_1 = tf.clip_by_value(tf.cast(p_1, tf.float32) + eps, eps, 1.0 - eps)
+        return (
+            p_1 * tf.math.log(p_1 / p_2) +
+            (1.0 - p_1) * tf.math.log((1.0 - p_1) / (1.0 - p_2))
         )
-        
-        # Handle case when p_1 = 0 (the prior)
-        # In this case, the KL reduces to: log(1/(1-p_2))
-        is_zero = tf.cast(tf.equal(p_1, 0.0), tf.float32)
-        zero_case = tf.math.log(tf.clip_by_value(1 / (1 - p_2), 1e-6, 1e6))
-        
-        # Combine both cases
-        return is_zero * zero_case + (1 - is_zero) * kl_loss
         
 
     def update_kl_weight(self):
@@ -70,10 +65,6 @@ class em_loss(object):
         # Apply annealed weighting to the KL term
         total_loss = - intra_loss + kl_weight * inter_loss
         
-        # Print current KL weight every 100 steps
-        if self.step % 100 == 0:
-            tf.print("Current KL weight:", kl_weight)
-    
         return total_loss
 
         

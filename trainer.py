@@ -140,8 +140,9 @@ class StaticTrainer(Trainer):
     
     def evaluate(self, dataset, K=3):
         ami_values = []
-        hidden_state = self.em_cell.initial_state(BATCH_SIZE, K)
         for features, groups in dataset:
+            # Reset hidden state for each batch to avoid state leakage between batches
+            hidden_state = self.em_cell.initial_state(BATCH_SIZE, K)
             features_corrupted = bitflip_noisy_static(features)
             inputs = (features_corrupted, features)
             hidden_state  = self.em_cell(inputs, hidden_state)

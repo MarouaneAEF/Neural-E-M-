@@ -1,11 +1,17 @@
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+import gc
+os.nice(10)  # Lower process priority: GPU gets full power, OS stays responsive
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 from tensorflow.keras.metrics import Mean
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import datetime
 import time
+
+# Thread limits must be set before any TF operation initializes the runtime
+tf.config.threading.set_inter_op_parallelism_threads(2)   # orchestration threads
+tf.config.threading.set_intra_op_parallelism_threads(4)   # within-op threads (4 P-cores)
 
 # Configure TensorFlow for Apple M3 GPU
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -26,7 +32,7 @@ try:
             c = tf.matmul(a, b)
             print(f"GPU test successful: matrix shape {c.shape}")
         
-        print("GPU acceleration active ✓")
+        print("GPU acceleration active ")
     else:
         print("No GPU found, using CPU instead")
 except Exception as e:
@@ -64,7 +70,7 @@ os.makedirs('./plots', exist_ok=True)
 
 # setting checkpoint
 checkpoint_dir = './ckpt/static'
-checkpoint = tf.train.Checkpoint(step = tf.Variable(0),
+checkpoint = tf.train.Checkpoint(step = tf.Variable(0, dtype=tf.int64),
                                  ami = tf.Variable(-1e10),
                                  optimizer=optimizer,
                                  model=rnn_cell.model)
@@ -88,7 +94,7 @@ def visualize_clusters(gamma, features, epoch, step):
     cluster_assignments = tf.argmax(gamma, axis=1)  # shape: [batch_size, H, W, 1]
     
     # Take the first image in the batch for visualization
-    sample_img = features[0, :, :, 0].numpy()
+    sample_img = features[0, 0, :, :, 0].numpy()
     sample_assignment = cluster_assignments[0, :, :, 0].numpy()
     
     # Create a figure with two subplots
@@ -109,49 +115,35 @@ def visualize_clusters(gamma, features, epoch, step):
     plt.tight_layout()
     
     # Save the figure
-    plt.savefig(f'./plots/clusters_epoch{epoch}_step{step}.png')
+    plt.savefig(f'./plots_pe/clusters_epoch{epoch}_step{step}.png')
     plt.close()
 
-@tf.function
-def train_step(features, n_iterations=20, epoch=0):  # Reduced from 40 to 20
-    # Adaptively increase iterations as training progresses
-    # Use Python logic instead of TensorFlow operations to determine iterations
-    # This avoids the None value error in the graph
-    
-    # Explicitly place operations on GPU if available
+# Fixed number of EM iterations: avoids Python-level retracing from variable n_iterations
+N_EM_ITERATIONS = 15
+
+@tf.function(input_signature=[
+    tf.TensorSpec(shape=(BATCH_SIZE, 1, 28, 28, 1), dtype=tf.float32)
+])
+def train_step(features):
     gpu_available = len(tf.config.list_physical_devices('GPU')) > 0
     device = '/GPU:0' if gpu_available else '/CPU:0'
-    
+
     with tf.device(device):
         features_corrupted = bitflip_noisy_static(features)
         hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
-        
-        # Get current learning rate - handle both scheduled and fixed learning rates
-        try:
-            # For learning rate schedule
-            if hasattr(optimizer, 'learning_rate') and hasattr(optimizer.learning_rate, '__call__'):
-                current_lr = optimizer.learning_rate(optimizer.iterations)
-            else:
-                # For fixed learning rate stored as a variable or attribute
-                current_lr = optimizer.learning_rate
-        except (AttributeError, TypeError):
-            # Fallback to fixed value if we can't determine it
-            current_lr = tf.constant(lr, dtype=tf.float32)
-        
-        # Use a fixed number of iterations - we'll adjust this from outside the function
-        for i in range(n_iterations):
-            with tf.GradientTape(persistent=True) as tape:
-                inputs = (features_corrupted, features) 
-                # E-step : computing gammas
-                hidden_state  = rnn_cell(inputs, hidden_state)
+        current_lr = lr_schedule(optimizer.iterations)
+
+        for i in range(N_EM_ITERATIONS):
+            # Non-persistent tape: resources freed automatically after one .gradient() call
+            with tf.GradientTape() as tape:
+                inputs = (features_corrupted, features)
+                hidden_state = rnn_cell(inputs, hidden_state)
                 rnn_state, preds, gamma = hidden_state
-                loss_rnn_em  = loss_fn(preds, features, gamma) 
-            # M-step : maximizing EM loss interpolated with kl loss 
+                loss_rnn_em = loss_fn(preds, features, gamma)
             gradients = tape.gradient(loss_rnn_em, rnn_cell.model.trainable_weights)
-            # Apply gradient clipping to prevent exploding gradients
             gradients = [tf.clip_by_norm(g, 3.0) if g is not None else g for g in gradients]
             optimizer.apply_gradients(zip(gradients, rnn_cell.model.trainable_weights))
-    
+
     return loss_rnn_em, gamma, current_lr
 
 
@@ -162,8 +154,9 @@ def validation(dataset):
     
     ami_values = []
     with tf.device(device):
-        hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
         for features, groups in dataset:
+            # Reset hidden state per batch to avoid state leakage across batches
+            hidden_state = rnn_cell.initial_state(BATCH_SIZE, K)
             features_corrupted = bitflip_noisy_static(features)
             inputs = (features_corrupted, features)
             hidden_state = rnn_cell(inputs, hidden_state)
@@ -197,11 +190,7 @@ for epoch in range(n_iterations):
     for step, (features, groups) in enumerate(train_data):
         checkpoint.step.assign_add(1)
         
-        # Calculate adaptive number of iterations based on epoch
-        # This is now done outside the tf.function to avoid graph issues
-        adaptive_iterations = min(10 + (epoch * 2), 20)  # Max 20 iterations
-        
-        loss_rnn_em, gamma, current_lr = train_step(features, n_iterations=adaptive_iterations, epoch=epoch)  
+        loss_rnn_em, gamma, current_lr = train_step(features)
         train_loss_mean(loss_rnn_em)
         ami_train = ami_score(gamma, groups)
         train_ami_mean(ami_train)         
@@ -222,7 +211,8 @@ for epoch in range(n_iterations):
             
             # Less frequent validation
             vami_score = validation(valid_data.take(validation_samples))
-            
+            gc.collect()  # Free CPU tensors accumulated during validation
+
             # Log validation metrics
             with summary_writer.as_default():
                 tf.summary.scalar('validation_ami', vami_score, step=checkpoint.step)
